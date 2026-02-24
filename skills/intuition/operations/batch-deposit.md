@@ -1,0 +1,73 @@
+# depositBatch
+
+Deposit into multiple vaults in a single transaction. Follow these steps in order.
+
+**Function:** `depositBatch(address receiver, bytes32[] termIds, uint256[] curveIds, uint256[] assets, uint256[] minShares) payable returns (uint256[])`
+
+## Step 1: Query Prerequisites
+
+```bash
+# Verify all vaults exist
+cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" 0x<termId1> --rpc-url $RPC
+cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" 0x<termId2> --rpc-url $RPC
+
+# Get default curve ID (use cached value if already queried)
+CURVE_ID=$(cast call $MULTIVAULT "getBondingCurveConfig()((address,uint256))" --rpc-url $RPC | grep -oP '\d+$')
+
+# Preview each deposit
+cast call $MULTIVAULT "previewDeposit(bytes32,uint256,uint256)(uint256,uint256)" 0x<termId1> $CURVE_ID <amount1> --rpc-url $RPC
+cast call $MULTIVAULT "previewDeposit(bytes32,uint256,uint256)(uint256,uint256)" 0x<termId2> $CURVE_ID <amount2> --rpc-url $RPC
+```
+
+## Step 2: Encode the Calldata
+
+### Using cast
+
+```bash
+CALLDATA=$(cast calldata "depositBatch(address,bytes32[],uint256[],uint256[],uint256[])" \
+  0x<receiver> "[0x<termId1>,0x<termId2>]" "[$CURVE_ID,$CURVE_ID]" "[1000000000000000,2000000000000000]" "[0,0]")
+```
+
+### Using viem
+
+```typescript
+const data = encodeFunctionData({
+  abi: parseAbi(['function depositBatch(address receiver, bytes32[] termIds, uint256[] curveIds, uint256[] assets, uint256[] minShares) payable returns (uint256[])']),
+  functionName: 'depositBatch',
+  args: [receiverAddress, termIds, curveIds, assets, minShares],
+})
+```
+
+## Step 3: Calculate msg.value
+
+```
+msg.value = sum(assets[])
+```
+
+```bash
+TOTAL_VALUE=$((1000000000000000 + 2000000000000000))
+```
+
+```typescript
+const value = assets.reduce((sum, a) => sum + a, 0n)
+```
+
+## Step 4: Output the Unsigned Transaction
+
+```
+Transaction: depositBatch
+  To:       0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e
+  Data:     0x<calldata>
+  Value:    <total wei> (<amount> $TRUST)
+  Chain ID: 1155
+  Network:  Intuition Mainnet
+
+  Deposits into <count> vaults: [<termId1>, <termId2>]
+  Amounts: [<amount1>, <amount2>] $TRUST
+```
+
+## Important
+
+- All arrays (termIds, curveIds, assets, minShares) must be the same length.
+- Each `curveIds` element can differ, but typically they're all the same `defaultCurveId`.
+- Total `msg.value` must equal the sum of the `assets` array exactly.

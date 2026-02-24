@@ -1,0 +1,88 @@
+# createAtoms
+
+Create one or more atom vaults from URI data. Follow these steps in order.
+
+**Function:** `createAtoms(bytes[] atomDatas, uint256[] assets) payable returns (bytes32[])`
+
+## Step 1: Query Prerequisites
+
+Run these queries before encoding. Use values from session setup if already cached.
+
+```bash
+# Get per-atom creation cost (cache this)
+ATOM_COST=$(cast call $MULTIVAULT "getAtomCost()(uint256)" --rpc-url $RPC)
+
+# Optional: check if atom already exists (skip creation if true)
+ATOM_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" $(cast --from-utf8 "Ethereum") --rpc-url $RPC)
+EXISTS=$(cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" $ATOM_ID --rpc-url $RPC)
+```
+
+If the atom already exists, skip creation and use the existing `ATOM_ID`.
+
+## Step 2: Encode the Calldata
+
+Encode each URI as hex bytes, then build the calldata.
+
+### Using cast
+
+```bash
+ATOM_DATA=$(cast --from-utf8 "Ethereum")
+CALLDATA=$(cast calldata "createAtoms(bytes[],uint256[])" "[$ATOM_DATA]" "[0]")
+```
+
+### Using viem
+
+```typescript
+import { encodeFunctionData, parseAbi, stringToHex } from 'viem'
+
+const atomCost = /* result from step 1 */
+const uris = ['Ethereum', 'Bitcoin', 'Solana']
+const atomDatas = uris.map(u => stringToHex(u))
+const assets = [0n, 0n, 0n] // no extra deposit beyond creation cost
+
+const data = encodeFunctionData({
+  abi: parseAbi(['function createAtoms(bytes[] atomDatas, uint256[] assets) payable returns (bytes32[])']),
+  functionName: 'createAtoms',
+  args: [atomDatas, assets],
+})
+```
+
+## Step 3: Calculate msg.value
+
+```
+msg.value = (atomCost * count) + sum(assets[])
+```
+
+- `assets[i]` is the optional initial deposit for each atom beyond the creation cost.
+- To create atoms with no extra deposit: `assets = [0, 0, ...]` and `msg.value = atomCost * count`.
+
+```bash
+# Single atom, no extra deposit
+VALUE=$ATOM_COST
+
+# Three atoms, no extra deposit
+VALUE=$((ATOM_COST * 3))
+```
+
+## Step 4: Output the Unsigned Transaction
+
+Present this to the user or pass to wallet infrastructure:
+
+```
+Transaction: createAtoms
+  To:       0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e
+  Data:     0x<calldata>
+  Value:    <wei> (<amount> $TRUST)
+  Chain ID: 1155
+  Network:  Intuition Mainnet
+
+  Creates <count> atom(s): ["Ethereum"]
+  Cost breakdown: atomCost=<wei> per atom, extra deposits=[0]
+```
+
+## Important
+
+- Atom IDs are deterministic. Creating an atom with the same data twice returns the existing ID (no-op).
+- Always check existence with `calculateAtomId` + `isTermCreated` before creating.
+- The function returns `bytes32[]` — the atom IDs for each created atom.
+- For batch creation, `atomDatas` and `assets` arrays must be the same length.
