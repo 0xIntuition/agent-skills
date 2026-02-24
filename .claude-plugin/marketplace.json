@@ -1,0 +1,11 @@
+{
+  "plugins": [
+    {
+      "name": "intuition-protocol",
+      "description": "Canonical reference for producing correct Intuition Protocol transactions. Teaches agents correct ABIs, encoding patterns, addresses, and value calculations for atoms, triples, and vaults.",
+      "skills": [
+        "./skills/intuition"
+      ]
+    }
+  ]
+}
