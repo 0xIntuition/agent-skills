@@ -5,13 +5,11 @@ Follow these multi-step recipes for common Intuition operations. Each assumes yo
 ## 1. Create an Atom and Deposit
 
 ```
-1. getBondingCurveConfig() -> (registry, curveId)
-2. getAtomCost() -> atomCost
-3. calculateAtomId(stringToHex("Ethereum")) -> check if exists with isTermCreated()
-4. createAtoms([stringToHex("Ethereum")], [0])  value=atomCost
+1. calculateAtomId(stringToHex("Ethereum")) -> check if exists with isTermCreated()
+2. createAtoms([stringToHex("Ethereum")], [0])  value=atomCost
    -> returns [atomId]
-5. previewDeposit(atomId, curveId, depositAmount) -> (expectedShares, assetsAfterFees)
-6. deposit(receiver, atomId, curveId, expectedShares * 95n / 100n)  value=depositAmount
+3. previewDeposit(atomId, curveId, depositAmount) -> (expectedShares, assetsAfterFees)
+4. deposit(receiver, atomId, curveId, expectedShares * 95n / 100n)  value=depositAmount
 ```
 
 ## 2. Create a Triple (Subject-Predicate-Object)
@@ -19,8 +17,7 @@ Follow these multi-step recipes for common Intuition operations. Each assumes yo
 ```
 1. Ensure all three atoms exist (create if needed)
 2. Get atom IDs: calculateAtomId() for each
-3. getTripleCost() -> tripleCost
-4. createTriples([subjectId], [predicateId], [objectId], [0])  value=tripleCost
+3. createTriples([subjectId], [predicateId], [objectId], [0])  value=tripleCost
    -> returns [tripleId]
 ```
 
@@ -65,11 +62,9 @@ A common pattern using the known `is` predicate:
 Create multiple atoms and link them in one flow:
 
 ```
-1. getAtomCost() -> atomCost
-2. createAtoms([stringToHex("Alice"), stringToHex("trusts"), stringToHex("Bob")], [0, 0, 0])
+1. createAtoms([stringToHex("Alice"), stringToHex("trusts"), stringToHex("Bob")], [0, 0, 0])
    value = atomCost * 3
    -> returns [aliceId, trustsId, bobId]
-3. getTripleCost() -> tripleCost
-4. createTriples([aliceId], [trustsId], [bobId], [0])  value=tripleCost
+2. createTriples([aliceId], [trustsId], [bobId], [0])  value=tripleCost
    -> returns [tripleId]
 ```
