@@ -27,6 +27,8 @@ Load policy from one of these locations:
 
 If no policy is present, run in `manual-review` mode.
 
+Example policy: `reference/autonomous-policy.example.json`
+
 ## Policy Modes
 
 | Mode | Behavior |
@@ -34,6 +36,20 @@ If no policy is present, run in `manual-review` mode.
 | `strict` | Requires all policy checks and approvals to pass before tx output |
 | `permissive` | Relaxes claim policy checks; keeps execution and economic gates enabled |
 | `manual-review` | Produces approval request objects for writes instead of executable tx output |
+
+For autonomous deployment, set mode to `strict` by default.
+
+## Claim Policy Optionality
+
+Claim policy is configurable and can be disabled (`claimPolicy.enabled = false`).
+
+Disabling claim policy does not disable execution safety gates. These remain mandatory:
+
+- chain/address allowlists
+- tx value limits
+- strict output schema
+- selector/argument integrity checks
+- simulation before broadcast
 
 ## Suggested Policy Schema
 
@@ -114,7 +130,7 @@ Minimum intent object:
    - stake/redeem operations: term exists on-chain (`isTermCreated(termId)`).
    - triple creation: subject/predicate/object atoms exist on-chain.
 6. Validate chain allowlist and exact MultiVault address match for the chain.
-7. Validate operation-specific and global value limits.
+7. Validate operation-specific and global value limits (applies to every write: create*, deposit*, redeem*).
 8. Resolve slippage bounds from previews (`minShares` / `minAssets`) per policy.
 9. Simulate transaction with the exact calldata and value.
 10. Evaluate approval mode:
@@ -157,6 +173,14 @@ If policy approves, output only:
   "chainId": 1155
 }
 ```
+
+Schema references:
+
+- `reference/schemas/intent.schema.json`
+- `reference/schemas/unsigned-tx.schema.json`
+- `reference/schemas/approval-request.schema.json`
+
+Runtime enforcement guide: `reference/runtime-enforcement.md`
 
 ## Prompt-Injection Safety Pattern
 

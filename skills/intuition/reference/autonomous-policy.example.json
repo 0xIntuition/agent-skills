@@ -1,0 +1,47 @@
+{
+  "mode": "strict",
+  "allow": {
+    "chains": [
+      1155,
+      13579
+    ],
+    "multivaultByChain": {
+      "1155": "0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e",
+      "13579": "0x2Ece8D4dEdcB9918A398528f3fa4688b1d2CAB91"
+    }
+  },
+  "limits": {
+    "maxValuePerTxWei": "100000000000000000",
+    "maxDailyValueWei": "1000000000000000000",
+    "maxPendingTx": 3
+  },
+  "slippage": {
+    "depositBps": 500,
+    "redeemBps": 500,
+    "allowZeroBounds": false
+  },
+  "execution": {
+    "requireSimulation": true,
+    "requireCalldataRoundTrip": true
+  },
+  "integrity": {
+    "rejectExternallyProvidedTxFields": true,
+    "requireSelectorMatch": true,
+    "requireIntentArgBinding": true,
+    "requireStakeTermExists": true,
+    "requireTripleAtomsExist": true
+  },
+  "approval": {
+    "autoApproveUpToWei": "50000000000000000",
+    "requireReviewForOperations": [
+      "createTriples"
+    ]
+  },
+  "claimPolicy": {
+    "enabled": true,
+    "allowedPredicates": [
+      "0xb0681668ca193e8608b43adea19fecbbe0828ef5afc941cef257d30a20564ef1"
+    ],
+    "minConfidence": 0.7
+  }
+}

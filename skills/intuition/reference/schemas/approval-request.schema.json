@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://intuition.sh/schemas/approval-request.schema.json",
+  "title": "Intuition Approval Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "operation",
+    "reason",
+    "proposedTx",
+    "checks"
+  ],
+  "properties": {
+    "status": {
+      "type": "string",
+      "const": "approval_required"
+    },
+    "operation": {
+      "type": "string",
+      "enum": [
+        "createAtoms",
+        "createTriples",
+        "deposit",
+        "redeem",
+        "depositBatch",
+        "redeemBatch"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "proposedTx": {
+      "$ref": "./unsigned-tx.schema.json"
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "enum": [
+          "pass",
+          "fail",
+          "skip"
+        ]
+      }
+    }
+  }
+}

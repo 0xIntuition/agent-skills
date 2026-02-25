@@ -39,6 +39,7 @@ For unattended agents, policy-driven approvals are the control plane for safe ex
 - Load policy from `./.intuition/autonomous-policy.json` or the path in `INTUITION_POLICY_PATH`.
 - If no policy file is available, use `manual-review` mode.
 - Policy gates run before signing and broadcasting. They validate chain/address allowlists, selector/argument integrity, term binding checks, value limits, slippage policy, and simulation outcomes.
+- Runtime enforcement is executed by the validator: `scripts/validate-tx-from-intent.js` (see `reference/runtime-enforcement.md`).
 
 Read `reference/autonomous-policy.md` for the schema and decision flow.
 
@@ -60,6 +61,7 @@ reference/
   workflows.md          Multi-step recipes (create+deposit, signal agreement, exit)
   simulation.md         Dry run / simulate writes before executing
   autonomous-policy.md  Approval modes, policy schema, and execution gates
+  runtime-enforcement.md Blocking validator flow before signing
 ```
 
 ## Protocol Model

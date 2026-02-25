@@ -1,0 +1,336 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://intuition.sh/schemas/intent.schema.json",
+  "title": "Intuition Intent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "operation",
+    "chainId",
+    "inputs"
+  ],
+  "properties": {
+    "operation": {
+      "type": "string",
+      "enum": [
+        "createAtoms",
+        "createTriples",
+        "deposit",
+        "redeem",
+        "depositBatch",
+        "redeemBatch"
+      ]
+    },
+    "chainId": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        }
+      ]
+    },
+    "inputs": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "createAtoms"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "inputs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "atomDatasHex",
+              "assetsWei"
+            ],
+            "properties": {
+              "atomDatasHex": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^0x[a-fA-F0-9]*$"
+                }
+              },
+              "assetsWei": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/u256"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "createTriples"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "inputs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "subjectIds",
+              "predicateIds",
+              "objectIds",
+              "assetsWei"
+            ],
+            "properties": {
+              "subjectIds": {
+                "$ref": "#/$defs/bytes32Array"
+              },
+              "predicateIds": {
+                "$ref": "#/$defs/bytes32Array"
+              },
+              "objectIds": {
+                "$ref": "#/$defs/bytes32Array"
+              },
+              "assetsWei": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/u256"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "deposit"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "inputs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "receiver",
+              "termId",
+              "curveId",
+              "amountWei"
+            ],
+            "properties": {
+              "receiver": {
+                "$ref": "#/$defs/address"
+              },
+              "termId": {
+                "$ref": "#/$defs/bytes32"
+              },
+              "curveId": {
+                "$ref": "#/$defs/u256"
+              },
+              "minShares": {
+                "$ref": "#/$defs/u256"
+              },
+              "amountWei": {
+                "$ref": "#/$defs/u256"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "redeem"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "inputs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "receiver",
+              "termId",
+              "curveId",
+              "shares"
+            ],
+            "properties": {
+              "receiver": {
+                "$ref": "#/$defs/address"
+              },
+              "termId": {
+                "$ref": "#/$defs/bytes32"
+              },
+              "curveId": {
+                "$ref": "#/$defs/u256"
+              },
+              "shares": {
+                "$ref": "#/$defs/u256"
+              },
+              "minAssets": {
+                "$ref": "#/$defs/u256"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "depositBatch"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "inputs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "receiver",
+              "termIds",
+              "curveIds",
+              "assetsWei",
+              "minShares"
+            ],
+            "properties": {
+              "receiver": {
+                "$ref": "#/$defs/address"
+              },
+              "termIds": {
+                "$ref": "#/$defs/bytes32Array"
+              },
+              "curveIds": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/u256"
+                }
+              },
+              "assetsWei": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/u256"
+                }
+              },
+              "minShares": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/u256"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "redeemBatch"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "inputs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "receiver",
+              "termIds",
+              "curveIds",
+              "shares",
+              "minAssets"
+            ],
+            "properties": {
+              "receiver": {
+                "$ref": "#/$defs/address"
+              },
+              "termIds": {
+                "$ref": "#/$defs/bytes32Array"
+              },
+              "curveIds": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/u256"
+                }
+              },
+              "shares": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/u256"
+                }
+              },
+              "minAssets": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/u256"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "address": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]{40}$"
+    },
+    "bytes32": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]{64}$"
+    },
+    "bytes32Array": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/bytes32"
+      }
+    },
+    "u256": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        }
+      ]
+    }
+  }
+}
