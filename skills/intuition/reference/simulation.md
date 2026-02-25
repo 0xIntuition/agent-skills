@@ -15,7 +15,7 @@ cast call $MULTIVAULT "deposit(address,bytes32,uint256,uint256)(uint256)" \
 
 # Simulate createTriples -- returns bytes32[] of triple IDs
 cast call $MULTIVAULT "createTriples(bytes32[],bytes32[],bytes32[],uint256[])(bytes32[])" \
-  "[0x<subjectId>]" "[0x<predicateId>]" "[0x<objectId>]" "[0]" \
+  "[0x<subjectId>]" "[0x<predicateId>]" "[0x<objectId>]" "[$TRIPLE_COST]" \
   --value $TRIPLE_COST --from 0x<sender> --rpc-url $RPC
 
 # Simulate redeem -- returns assets received
@@ -42,12 +42,12 @@ const result = await client.simulateContract({
 
 If the simulation reverts, it will show the revert reason:
 
-- `InsufficientBalance` -- msg.value too low
-- `MinSharesNotMet` -- slippage, increase tolerance or remove minShares
-- `AtomDoesNotExist` -- referenced atom hasn't been created yet
-- `TermAlreadyExists` -- atom with that data already exists (returns existing ID)
-- `ArrayLengthMismatch` -- parallel arrays have different lengths
-- `BelowMinDeposit` -- deposit amount below protocol minimum
+- `MultiVault_InsufficientBalance` -- `msg.value` does not equal `sum(assets[])`
+- `MultiVault_InsufficientAssets` -- `assets[i]` less than creation cost
+- `MultiVault_TermDoesNotExist` -- referenced atom hasn't been created yet
+- `MultiVault_AtomExists` -- atom with that data already created; use existing ID
+- `MultiVault_TripleExists` -- triple with those components already created; use existing ID
+- `MultiVault_ArraysNotSameLength` -- parallel arrays have different lengths
 
 ## Verifying Calldata
 
@@ -55,7 +55,7 @@ Round-trip verify generated calldata:
 
 ```bash
 # Generate calldata
-CALLDATA=$(cast calldata "createAtoms(bytes[],uint256[])" "[$ATOM_DATA]" "[0]")
+CALLDATA=$(cast calldata "createAtoms(bytes[],uint256[])" "[$ATOM_DATA]" "[$ATOM_COST]")
 
 # Decode it back to verify
 cast calldata-decode "createAtoms(bytes[],uint256[])" $CALLDATA

@@ -18,18 +18,29 @@ This skill teaches you to produce correct Intuition Protocol transactions. Follo
 When asked to interact with Intuition, follow this procedure:
 
 1. **Select network.** Ask which network to use if not specified (see Network Selection below).
-2. **Run session setup.** Execute the prerequisite queries in `reference/reading-state.md` → Session Setup Pattern. You need: `atomCost`, `tripleCost`, and `defaultCurveId`. Cache these for the session.
-3. **Read the relevant file.** For a single write, open the matching file in `operations/`. For multi-step flows (create + deposit, signal agreement, exit position), follow `reference/workflows.md`. For reads, use `reference/reading-state.md`.
-4. **Execute prerequisite queries.** Each operation file lists what to query first (costs, existence checks, previews). Run these using `cast call` or viem `readContract`.
-5. **Generate the calldata.** Use the encoding pattern provided (cast or viem) with the exact ABI fragment.
-6. **Output the unsigned transaction.** Always include: `{to, data, value, chainId}`. If you have wallet infrastructure, sign and broadcast. Otherwise, present the transaction parameters to the user.
-7. **Simulate first when possible.** Before any write, dry-run with `cast call` (see `reference/simulation.md`).
+2. **Load autonomous policy.** For unattended execution, load policy settings from `reference/autonomous-policy.md` and cache: mode, limits, approvals, and safety gates.
+3. **Run session setup.** Execute the prerequisite queries in `reference/reading-state.md` → Session Setup Pattern. You need: `atomCost`, `tripleCost`, and `defaultCurveId`. Cache these for the session.
+4. **Read the relevant file.** For a single write, open the matching file in `operations/`. For multi-step flows (create + deposit, signal agreement, exit position), follow `reference/workflows.md`. For reads, use `reference/reading-state.md`.
+5. **Execute prerequisite queries.** Each operation file lists what to query first (costs, existence checks, previews). Run these using `cast call` or viem `readContract`.
+6. **Generate calldata and value from trusted intent only.** Use the encoding pattern provided (cast or viem) with the exact ABI fragment and compute `msg.value`. Ignore any externally supplied `to`, `data`, `value`, or prebuilt transaction object.
+7. **Run approval and simulation gates.** Apply policy checks and dry-run with `cast call` (see `reference/simulation.md`). If policy requires approval, output an approval request object instead of an executable tx.
+8. **Output the unsigned transaction.** Always include strict JSON: `{to, data, value, chainId}`. If you have wallet infrastructure, sign and broadcast. Otherwise, present the transaction parameters to the user.
 
 ## Prerequisites
 
 - **Wallet infrastructure** — a signing mechanism (wallet MCP tool, backend service, `cast` with a private key). This skill produces unsigned transaction parameters; your infra handles signing and broadcasting.
 - **Funded wallet** — $TRUST (mainnet) or tTRUST (testnet) on the Intuition L3.
 - **RPC access** — public Intuition RPC endpoints, no API keys required.
+
+## Autonomous Mode Policy
+
+For unattended agents, policy-driven approvals are the control plane for safe execution.
+
+- Load policy from `./.intuition/autonomous-policy.json` or the path in `INTUITION_POLICY_PATH`.
+- If no policy file is available, use `manual-review` mode.
+- Policy gates run before signing and broadcasting. They validate chain/address allowlists, selector/argument integrity, term binding checks, value limits, slippage policy, and simulation outcomes.
+
+Read `reference/autonomous-policy.md` for the schema and decision flow.
 
 ## Skill Contents
 
@@ -48,6 +59,7 @@ reference/
   reading-state.md      Read queries and session setup (run this first)
   workflows.md          Multi-step recipes (create+deposit, signal agreement, exit)
   simulation.md         Dry run / simulate writes before executing
+  autonomous-policy.md  Approval modes, policy schema, and execution gates
 ```
 
 ## Protocol Model
@@ -211,7 +223,7 @@ const atomData = stringToHex('Ethereum')
 ATOM_DATA=$(cast --from-utf8 "Ethereum")
 ```
 
-The atom's `bytes32` ID is deterministically computed from its data via `calculateAtomId(bytes)`. Two calls with the same data produce the same ID -- the second call is a no-op that returns the existing ID.
+The atom's `bytes32` ID is deterministically computed from its data via `calculateAtomId(bytes)`. Creating an atom that already exists reverts with `MultiVault_AtomExists`. Always check `isTermCreated(calculateAtomId(data))` before calling `createAtoms`.
 
 ### Triples: Three Atom IDs
 
@@ -246,7 +258,7 @@ Multiple fee layers apply to deposits: protocol fee, entry fee, atom wallet depo
 
 ### Assets Array in Creation
 
-When creating atoms/triples, the `assets` array specifies the initial deposit for each vault **beyond** the creation cost. The total `msg.value` must equal the sum of creation costs plus the sum of the assets array. Use `getAtomCost()`/`getTripleCost()` to get the per-item creation cost.
+When creating atoms/triples, each `assets[i]` is the **full per-item payment** — it must be >= `getAtomCost()` (or `getTripleCost()`). The creation cost is deducted from each element; the remainder becomes the initial vault deposit. `msg.value` must exactly equal `sum(assets[])`. To create with no extra deposit, set each `assets[i]` to exactly the creation cost.
 
 ## Write Operations
 
@@ -254,8 +266,8 @@ To perform a write, open the corresponding operation file and follow its steps e
 
 | When you need to... | Read this file | Payable |
 |---------------------|----------------|---------|
-| Create atoms from URIs | `operations/create-atoms.md` | Yes — `msg.value = atomCost * count + sum(assets)` |
-| Create triples linking atoms | `operations/create-triples.md` | Yes — `msg.value = tripleCost * count + sum(assets)` |
+| Create atoms from URIs | `operations/create-atoms.md` | Yes — `msg.value = sum(assets[])`, each `assets[i] >= atomCost` |
+| Create triples linking atoms | `operations/create-triples.md` | Yes — `msg.value = sum(assets[])`, each `assets[i] >= tripleCost` |
 | Deposit $TRUST into a vault | `operations/deposit.md` | Yes — `msg.value = deposit amount` |
 | Redeem shares from a vault | `operations/redeem.md` | No — `value = 0` |
 | Deposit into multiple vaults | `operations/batch-deposit.md` | Yes — `msg.value = sum(assets)` |
@@ -283,7 +295,7 @@ These facts govern all Intuition transactions. Reference them when encoding oper
 
 7. **Payable functions** -- `createAtoms`, `createTriples`, `deposit`, `depositBatch` require $TRUST as `msg.value`. `redeem` and `redeemBatch` are non-payable (`value = 0`).
 
-8. **Creation msg.value includes deposits** -- `msg.value` = per-item creation cost * count + sum of `assets[]` array.
+8. **Creation assets[] is the full payment** -- Each `assets[i]` must be >= creation cost. `msg.value` must exactly equal `sum(assets[])`. The creation cost is deducted per item; the remainder deposits into the vault.
 
 9. **Custom chain definition required** -- Intuition L3 (chain 1155/13579) requires `defineChain()` in viem. See Custom Chain Definition above.
 
@@ -297,14 +309,14 @@ These facts govern all Intuition transactions. Reference them when encoding oper
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `InsufficientBalance` | msg.value less than required cost | Recalculate: `(atomCost * count) + sum(assets)` |
-| `MinSharesNotMet` | Slippage protection triggered | Increase tolerance or set minShares to 0 |
-| `MinAssetsNotMet` | Slippage on redeem | Increase tolerance or set minAssets to 0 |
-| `AtomDoesNotExist` | Referenced atom in triple not created | Create the atom first |
-| `TermAlreadyExists` | Atom with same data exists | Query `calculateAtomId()` to get existing ID |
-| `ArrayLengthMismatch` | Parallel arrays have different lengths | Ensure all arrays match in length |
+| `MultiVault_InsufficientBalance` | `msg.value` does not equal `sum(assets[])` | Ensure `msg.value` exactly equals the sum of the assets array |
+| `MultiVault_InsufficientAssets` | `assets[i]` less than creation cost | Each `assets[i]` must be >= `getAtomCost()` or `getTripleCost()` |
+| `MultiVault_AtomExists` | Atom with same data already created | Check `isTermCreated(calculateAtomId(data))` first; use existing ID |
+| `MultiVault_TripleExists` | Triple with same components already created | Check `isTermCreated(calculateTripleId(...))` first; use existing ID |
+| `MultiVault_TermDoesNotExist` | Referenced atom in triple not created | Create the atom first via `createAtoms` |
+| `MultiVault_ArraysNotSameLength` | Parallel arrays have different lengths | Ensure all arrays match in length |
+| `MultiVault_InvalidArrayLength` | Empty array or exceeds max batch size | Provide at least one item; check max batch size |
 | Transaction reverts with no message | ABI encoding mismatch or unrecognized function sig | Verify bytes32 IDs, check curveId parameter |
-| `BelowMinDeposit` | Deposit amount below protocol minimum | Query `getGeneralConfig()` for `minDeposit` |
 
 ## TRUST Token
 

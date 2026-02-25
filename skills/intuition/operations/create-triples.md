@@ -33,7 +33,7 @@ If any atom doesn't exist, create it first using `operations/create-atoms.md`.
 
 ```bash
 CALLDATA=$(cast calldata "createTriples(bytes32[],bytes32[],bytes32[],uint256[])" \
-  "[$SUBJECT_ID]" "[$PREDICATE_ID]" "[$OBJECT_ID]" "[0]")
+  "[$SUBJECT_ID]" "[$PREDICATE_ID]" "[$OBJECT_ID]" "[$TRIPLE_COST]")
 ```
 
 ### Using viem
@@ -49,26 +49,28 @@ const data = encodeFunctionData({
 ## Step 3: Calculate msg.value
 
 ```
-msg.value = (tripleCost * count) + sum(assets[])
+msg.value = sum(assets[])
 ```
+
+Each `assets[i]` is the full per-item payment and must be >= `tripleCost`. The creation cost is deducted from each element; the remainder becomes the initial vault deposit (subject to fees).
 
 ```bash
 # Single triple, no extra deposit
-VALUE=$TRIPLE_COST
+VALUE=$TRIPLE_COST  # assets=[$TRIPLE_COST]
 ```
 
 ## Step 4: Output the Unsigned Transaction
 
 ```
 Transaction: createTriples
-  To:       0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e
+  To:       $MULTIVAULT
   Data:     0x<calldata>
   Value:    <wei> (<amount> $TRUST)
-  Chain ID: 1155
-  Network:  Intuition Mainnet
+  Chain ID: $CHAIN_ID
+  Network:  $NETWORK
 
   Creates 1 triple(s): (Alice, trusts, Bob)
-  Cost breakdown: tripleCost=<wei> per triple, extra deposits=[0]
+  Per-triple payment: <wei> (tripleCost=<wei>, extra deposit=0)
 ```
 
 ## Important
@@ -77,4 +79,4 @@ Transaction: createTriples
 - Every triple automatically creates a **counter-triple** vault. Deposit into the counter-triple to signal disagreement.
 - Use `getCounterIdFromTripleId(tripleId)` to get the counter-triple's ID for disagreement signaling.
 - Triple IDs are deterministic: use `calculateTripleId(subjectId, predicateId, objectId)` to check existence.
-- If any referenced atom doesn't exist, the transaction reverts with `AtomDoesNotExist`.
+- If any referenced atom doesn't exist, the transaction reverts with `MultiVault_TermDoesNotExist(termId)`.
