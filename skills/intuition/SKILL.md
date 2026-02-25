@@ -19,7 +19,7 @@ When asked to interact with Intuition, follow this procedure:
 
 1. **Select network.** Ask which network to use if not specified (see Network Selection below).
 2. **Run session setup.** Execute the prerequisite queries in `reference/reading-state.md` → Session Setup Pattern. You need: `atomCost`, `tripleCost`, and `defaultCurveId`. Cache these for the session.
-3. **Read the relevant operation file.** For writes, open the matching file in `operations/`. For reads, use `reference/reading-state.md`.
+3. **Read the relevant file.** For a single write, open the matching file in `operations/`. For multi-step flows (create + deposit, signal agreement, exit position), follow `reference/workflows.md`. For reads, use `reference/reading-state.md`.
 4. **Execute prerequisite queries.** Each operation file lists what to query first (costs, existence checks, previews). Run these using `cast call` or viem `readContract`.
 5. **Generate the calldata.** Use the encoding pattern provided (cast or viem) with the exact ABI fragment.
 6. **Output the unsigned transaction.** Always include: `{to, data, value, chainId}`. If you have wallet infrastructure, sign and broadcast. Otherwise, present the transaction parameters to the user.
@@ -27,10 +27,8 @@ When asked to interact with Intuition, follow this procedure:
 
 ## Prerequisites
 
-This skill requires:
-
-- **Wallet infrastructure** — a signing mechanism (wallet MCP tool, backend service, browser extension, `cast` with a private key, etc.). This skill produces correct unsigned transaction parameters; your infra handles signing and broadcasting.
-- **Funded wallet** — $TRUST (mainnet) or tTRUST (testnet) on the Intuition L3. Acquire TRUST on Base and bridge via https://app.intuition.systems/bridge.
+- **Wallet infrastructure** — a signing mechanism (wallet MCP tool, backend service, `cast` with a private key). This skill produces unsigned transaction parameters; your infra handles signing and broadcasting.
+- **Funded wallet** — $TRUST (mainnet) or tTRUST (testnet) on the Intuition L3.
 - **RPC access** — public Intuition RPC endpoints, no API keys required.
 
 ## Skill Contents
@@ -52,15 +50,13 @@ reference/
   simulation.md         Dry run / simulate writes before executing
 ```
 
-## What Intuition Is
+## Protocol Model
 
-Intuition is an attestation protocol where knowledge is stored on-chain as **atoms** and **triples**.
+- **Atoms** represent any concept — a person, URL, address, label. Created by encoding a URI as bytes. Each has a deterministic `bytes32` ID and a vault.
+- **Triples** are claims linking three atoms: `(subject, predicate, object)` — e.g., `(Alice, trusts, Bob)`. Each has a vault and an automatic counter-triple vault.
+- **Vaults** back every atom and triple. Depositing $TRUST mints shares on a bonding curve. Depositing into a triple signals agreement; depositing into its counter-triple signals disagreement.
 
-- **Atoms** are identifiers for any concept -- a person, URL, idea, address. Created by encoding a URI as bytes.
-- **Triples** are claims linking three atoms: `(subject, predicate, object)` -- e.g., `(Alice, trusts, Bob)`.
-- **Vaults** back every atom and triple. Users deposit $TRUST (the native token) to signal agreement (or into counter-vaults for disagreement). Shares follow a bonding curve; the vault is an ERC-4626-style primitive.
-
-The Intuition L3 uses **$TRUST** (mainnet) and **tTRUST** (testnet) as the native gas token. All `msg.value` amounts and vault deposits are denominated in TRUST. The builder's wallet must be funded with TRUST on the appropriate L3 network.
+Native token: **$TRUST** (mainnet) / **tTRUST** (testnet), 18 decimals. All `msg.value` and gas are denominated in TRUST. Gas fees are negligible (~0.0001 TRUST per tx).
 
 ## Network Selection
 
@@ -287,17 +283,15 @@ These facts govern all Intuition transactions. Reference them when encoding oper
 
 7. **Payable functions** -- `createAtoms`, `createTriples`, `deposit`, `depositBatch` require $TRUST as `msg.value`. `redeem` and `redeemBatch` are non-payable (`value = 0`).
 
-8. **Native token: TRUST** -- The Intuition L3 uses $TRUST (mainnet) / tTRUST (testnet) as native gas, 18 decimals. `parseEther('0.5')` works for formatting — the unit is TRUST.
+8. **Creation msg.value includes deposits** -- `msg.value` = per-item creation cost * count + sum of `assets[]` array.
 
-9. **Creation msg.value includes deposits** -- `msg.value` = per-item creation cost * count + sum of `assets[]` array.
+9. **Custom chain definition required** -- Intuition L3 (chain 1155/13579) requires `defineChain()` in viem. See Custom Chain Definition above.
 
-10. **Custom chain definition required** -- Intuition L3 (chain 1155/13579) requires `defineChain()` in viem. See Custom Chain Definition above.
+10. **Creation returns bytes32[]** -- `createAtoms` and `createTriples` return `bytes32[]` — hashes of the input data.
 
-11. **Creation returns bytes32[]** -- `createAtoms` and `createTriples` return `bytes32[]` — hashes of the input data.
+11. **Counter-triples are automatic** -- Creating a triple also creates its counter-triple vault. Deposit into the counter-triple to signal disagreement.
 
-12. **Counter-triples are automatic** -- Creating a triple also creates its counter-triple vault. Deposit into the counter-triple to signal disagreement.
-
-13. **Separate preview functions for creation and deposit** -- Use `previewAtomCreate`/`previewTripleCreate` when creating. Use `previewDeposit` for existing vaults. Fee calculations differ.
+12. **Separate preview functions for creation and deposit** -- Use `previewAtomCreate`/`previewTripleCreate` when creating. Use `previewDeposit` for existing vaults. Fee calculations differ.
 
 ## Error Patterns
 
@@ -314,18 +308,12 @@ These facts govern all Intuition transactions. Reference them when encoding oper
 
 ## TRUST Token
 
-TRUST is the native gas and protocol token on the Intuition L3. All operations — creating atoms/triples, depositing into vaults, and gas — are denominated in TRUST.
-
 | | Mainnet | Testnet |
 |---|---|---|
 | Symbol | $TRUST | tTRUST |
 | Decimals | 18 | 18 |
-| TRUST on Base (ERC-20) | `0x6cd905dF2Ed214b22e0d48FF17CD4200C1C6d8A3` | — |
-| Bridge | https://app.intuition.systems/bridge | — |
 
-**Acquiring TRUST:** Swap on [Uniswap (Base)](https://app.uniswap.org/swap?chain=base&outputCurrency=0x6cd905dF2Ed214b22e0d48FF17CD4200C1C6d8A3) or [Aerodrome (Base)](https://aerodrome.finance/swap?from=0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913&to=0x6cd905dF2Ed214b22e0d48FF17CD4200C1C6d8A3), or buy on Coinbase. Then bridge to the L3.
-
-Gas fees on the L3 are negligible (~0.0001 TRUST per tx). The same TRUST used for protocol operations also pays for gas.
+`parseEther('0.5')` works for formatting TRUST amounts (same 18-decimal math). The unit is TRUST, not ETH.
 
 ## Contract Source
 

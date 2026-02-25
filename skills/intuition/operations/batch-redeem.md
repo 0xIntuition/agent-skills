@@ -2,6 +2,8 @@
 
 Redeem shares from multiple vaults in a single transaction. Follow these steps in order.
 
+**Requires:** `$RPC`, `$MULTIVAULT`, `$CURVE_ID` from session setup (`reference/reading-state.md`).
+
 **Function:** `redeemBatch(address receiver, bytes32[] termIds, uint256[] curveIds, uint256[] shares, uint256[] minAssets) returns (uint256[])`
 
 ## Step 1: Query Prerequisites

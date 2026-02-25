@@ -2,6 +2,8 @@
 
 Redeem shares from a vault, receiving $TRUST back. Follow these steps in order.
 
+**Requires:** `$RPC`, `$MULTIVAULT`, `$CURVE_ID` from session setup (`reference/reading-state.md`).
+
 **Function:** `redeem(address receiver, bytes32 termId, uint256 curveId, uint256 shares, uint256 minAssets) returns (uint256)`
 
 ## Step 1: Query Prerequisites

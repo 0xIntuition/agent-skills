@@ -2,6 +2,8 @@
 
 Create one or more triple vaults linking existing atoms. Follow these steps in order.
 
+**Requires:** `$RPC`, `$MULTIVAULT`, `$TRIPLE_COST` from session setup (`reference/reading-state.md`).
+
 **Function:** `createTriples(bytes32[] subjectIds, bytes32[] predicateIds, bytes32[] objectIds, uint256[] assets) payable returns (bytes32[])`
 
 ## Step 1: Query Prerequisites

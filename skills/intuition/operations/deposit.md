@@ -2,6 +2,8 @@
 
 Deposit $TRUST into an existing atom or triple vault, minting shares to the receiver. Follow these steps in order.
 
+**Requires:** `$RPC`, `$MULTIVAULT`, `$CURVE_ID` from session setup (`reference/reading-state.md`).
+
 **Function:** `deposit(address receiver, bytes32 termId, uint256 curveId, uint256 minShares) payable returns (uint256)`
 
 ## Step 1: Query Prerequisites

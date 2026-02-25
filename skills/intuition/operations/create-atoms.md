@@ -2,6 +2,8 @@
 
 Create one or more atom vaults from URI data. Follow these steps in order.
 
+**Requires:** `$RPC`, `$MULTIVAULT`, `$ATOM_COST` from session setup (`reference/reading-state.md`).
+
 **Function:** `createAtoms(bytes[] atomDatas, uint256[] assets) payable returns (bytes32[])`
 
 ## Step 1: Query Prerequisites

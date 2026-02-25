@@ -2,6 +2,8 @@
 
 Deposit into multiple vaults in a single transaction. Follow these steps in order.
 
+**Requires:** `$RPC`, `$MULTIVAULT`, `$CURVE_ID` from session setup (`reference/reading-state.md`).
+
 **Function:** `depositBatch(address receiver, bytes32[] termIds, uint256[] curveIds, uint256[] assets, uint256[] minShares) payable returns (uint256[])`
 
 ## Step 1: Query Prerequisites
