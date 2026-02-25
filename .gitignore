@@ -10,3 +10,16 @@ Thumbs.db
 
 # Node (in case scripts are added later)
 node_modules/
+
+# Claude Code local files
+.claude/settings.*
+.claude/memory/
+.claude/plans/
+.claude/projects/
+
+# Runtime enforcement (deferred — revisit for Claw skill)
+scripts/enforce-and-sign.js
+scripts/validate-tx-from-intent.js
+skills/intuition/reference/runtime-enforcement.md
+skills/intuition/reference/autonomous-policy.example.json
+skills/intuition/reference/schemas/
