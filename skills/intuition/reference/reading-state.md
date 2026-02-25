@@ -23,7 +23,7 @@ cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" $(cast --from-utf8 "Ethe
 cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" 0x<termId> --rpc-url $RPC
 
 # Query default curve ID (do this once per session)
-CURVE_ID=$(cast call $MULTIVAULT "getBondingCurveConfig()((address,uint256))" --rpc-url $RPC | grep -oP '\d+$')
+CURVE_ID=$(cast call $MULTIVAULT "getBondingCurveConfig()((address,uint256))" --rpc-url $RPC | awk -F', ' '{print $2}' | tr -d ')')
 # On mainnet this returns 1; always query this value
 
 # Get vault state (totalAssets, totalShares)
@@ -131,16 +131,19 @@ const [totalAssets, totalShares] = await client.readContract({
 ### Using cast
 
 ```bash
-# Set network constants (mainnet shown — swap for testnet values if needed)
+# Set network constants from SKILL.md Network Configuration table
+# Mainnet shown — substitute testnet values if user selected testnet
 RPC="https://rpc.intuition.systems/http"
 MULTIVAULT="0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e"
+CHAIN_ID=1155
+NETWORK="Intuition Mainnet"
 
 # 1. Get creation costs
 ATOM_COST=$(cast call $MULTIVAULT "getAtomCost()(uint256)" --rpc-url $RPC)
 TRIPLE_COST=$(cast call $MULTIVAULT "getTripleCost()(uint256)" --rpc-url $RPC)
 
 # 2. Get default curve ID (always query — value is governance-configurable)
-CURVE_ID=$(cast call $MULTIVAULT "getBondingCurveConfig()((address,uint256))" --rpc-url $RPC | grep -oP '\d+$')
+CURVE_ID=$(cast call $MULTIVAULT "getBondingCurveConfig()((address,uint256))" --rpc-url $RPC | awk -F', ' '{print $2}' | tr -d ')')
 
 # 3. Get fee config (optional, for detailed calculations)
 cast call $MULTIVAULT "getVaultFees()((uint256,uint256,uint256))" --rpc-url $RPC
@@ -156,4 +159,4 @@ const tripleCost = await client.readContract({ address: MULTIVAULT, abi: readAbi
 const [registry, defaultCurveId] = await client.readContract({ address: MULTIVAULT, abi: readAbi, functionName: 'getBondingCurveConfig' })
 ```
 
-You now have `atomCost`, `tripleCost`, and `defaultCurveId`. Use these in all subsequent operations.
+You now have `atomCost`, `tripleCost`, `defaultCurveId`, `$CHAIN_ID`, and `$NETWORK`. Use these in all subsequent operations — including the Step 4 output templates in each operation file.

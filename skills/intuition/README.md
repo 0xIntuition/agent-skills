@@ -76,9 +76,19 @@ Both are Intuition L3 chains. The native token is **$TRUST** (mainnet) / **tTRUS
 1. **Query prerequisites** -- cost queries (`getAtomCost`, `getTripleCost`), existence checks
 2. **Encode calldata** -- using viem `encodeFunctionData` or `cast calldata`, with inline ABI fragments
 3. **Calculate msg.value** -- creation cost per item + any initial deposits (all in $TRUST)
-4. **Output unsigned tx** -- `{to, data, value, chainId}` for external signing
+4. **Apply policy gates (autonomous mode)** -- allowlists, spend limits, simulation, approval mode
+5. **Output unsigned tx** -- `{to, data, value, chainId}` for external signing
 
 The skill provides both `cast` (foundry) and `viem` (TypeScript) encoding patterns for every operation.
+
+## Autonomous Approvals
+
+For unattended execution, configure policy-driven approvals in [reference/autonomous-policy.md](./reference/autonomous-policy.md).
+
+- Policy file location: `INTUITION_POLICY_PATH` or `./.intuition/autonomous-policy.json`
+- Modes: `strict`, `permissive`, `manual-review`
+- Guardrails: chain/address allowlists, value limits, mandatory simulation, structured approval requests
+- Injection defense: untrusted research cannot supply `to/data/value`; executor recomputes tx fields and verifies calldata selector/args
 
 ## Key V2 API Details
 
