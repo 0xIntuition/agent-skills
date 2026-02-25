@@ -59,19 +59,20 @@ Each `assets[i]` is the full per-item payment and must be >= `tripleCost`. The c
 VALUE=$TRIPLE_COST  # assets=[$TRIPLE_COST]
 ```
 
-## Step 4: Output the Unsigned Transaction
+## Step 4: Output the Unsigned Transaction JSON
 
-```
-Transaction: createTriples
-  To:       $MULTIVAULT
-  Data:     0x<calldata>
-  Value:    <wei> (<amount> $TRUST)
-  Chain ID: $CHAIN_ID
-  Network:  $NETWORK
+Output one unsigned transaction object with resolved values from this session:
 
-  Creates 1 triple(s): (Alice, trusts, Bob)
-  Per-triple payment: <wei> (tripleCost=<wei>, extra deposit=0)
+```json
+{
+  "to": "0x<multivault-address>",
+  "data": "0x<calldata>",
+  "value": "<msg.value in wei as base-10 string>",
+  "chainId": "<chain ID as base-10 string>"
+}
 ```
+
+Set `to` to `$MULTIVAULT`, `value` to the Step 3 result, and `chainId` to `$CHAIN_ID`.
 
 ## Important
 

@@ -69,21 +69,20 @@ EXTRA=$(cast --to-wei 0.01)
 VALUE=$((ATOM_COST + EXTRA))  # assets=[$((ATOM_COST + EXTRA))]
 ```
 
-## Step 4: Output the Unsigned Transaction
+## Step 4: Output the Unsigned Transaction JSON
 
-Present this to the user or pass to wallet infrastructure:
+Output one unsigned transaction object with resolved values from this session:
 
+```json
+{
+  "to": "0x<multivault-address>",
+  "data": "0x<calldata>",
+  "value": "<msg.value in wei as base-10 string>",
+  "chainId": "<chain ID as base-10 string>"
+}
 ```
-Transaction: createAtoms
-  To:       $MULTIVAULT
-  Data:     0x<calldata>
-  Value:    <wei> (<amount> $TRUST)
-  Chain ID: $CHAIN_ID
-  Network:  $NETWORK
 
-  Creates <count> atom(s): ["Ethereum"]
-  Per-atom payment: <wei> (atomCost=<wei>, extra deposit=0)
-```
+Set `to` to `$MULTIVAULT`, `value` to the Step 3 result, and `chainId` to `$CHAIN_ID`.
 
 ## Important
 

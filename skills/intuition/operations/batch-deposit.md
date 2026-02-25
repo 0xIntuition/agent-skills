@@ -54,19 +54,20 @@ TOTAL_VALUE=$((1000000000000000 + 2000000000000000))
 const value = assets.reduce((sum, a) => sum + a, 0n)
 ```
 
-## Step 4: Output the Unsigned Transaction
+## Step 4: Output the Unsigned Transaction JSON
 
-```
-Transaction: depositBatch
-  To:       $MULTIVAULT
-  Data:     0x<calldata>
-  Value:    <total wei> (<amount> $TRUST)
-  Chain ID: $CHAIN_ID
-  Network:  $NETWORK
+Output one unsigned transaction object with resolved values from this session:
 
-  Deposits into <count> vaults: [<termId1>, <termId2>]
-  Amounts: [<amount1>, <amount2>] $TRUST
+```json
+{
+  "to": "0x<multivault-address>",
+  "data": "0x<calldata>",
+  "value": "<msg.value in wei as base-10 string>",
+  "chainId": "<chain ID as base-10 string>"
+}
 ```
+
+Set `to` to `$MULTIVAULT`, `value` to the Step 3 result, and `chainId` to `$CHAIN_ID`.
 
 ## Important
 

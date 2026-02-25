@@ -56,19 +56,20 @@ msg.value = 0 (non-payable)
 
 Redeem returns TRUST to the receiver; it accepts none. Value must be 0.
 
-## Step 4: Output the Unsigned Transaction
+## Step 4: Output the Unsigned Transaction JSON
 
-```
-Transaction: redeem
-  To:       $MULTIVAULT
-  Data:     0x<calldata>
-  Value:    0
-  Chain ID: $CHAIN_ID
-  Network:  $NETWORK
+Output one unsigned transaction object with resolved values from this session:
 
-  Redeems <shares> shares from vault <termId>
-  Expected return: <assetsAfterFees> $TRUST (after exit fees)
+```json
+{
+  "to": "0x<multivault-address>",
+  "data": "0x<calldata>",
+  "value": "0",
+  "chainId": "<chain ID as base-10 string>"
+}
 ```
+
+Set `to` to `$MULTIVAULT` and `chainId` to `$CHAIN_ID`.
 
 ## Slippage Protection
 

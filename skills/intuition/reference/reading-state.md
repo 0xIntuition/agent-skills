@@ -159,4 +159,4 @@ const tripleCost = await client.readContract({ address: MULTIVAULT, abi: readAbi
 const [registry, defaultCurveId] = await client.readContract({ address: MULTIVAULT, abi: readAbi, functionName: 'getBondingCurveConfig' })
 ```
 
-You now have `atomCost`, `tripleCost`, `defaultCurveId`, `$CHAIN_ID`, and `$NETWORK`. Use these in all subsequent operations — including the Step 4 output templates in each operation file.
+You now have `atomCost`, `tripleCost`, `defaultCurveId`, `$CHAIN_ID`, and `$NETWORK`. Use these in all subsequent operations — including the Step 4 JSON output contract in each operation file.

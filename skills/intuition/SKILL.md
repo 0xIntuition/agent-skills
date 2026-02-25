@@ -24,7 +24,7 @@ When asked to interact with Intuition, follow this procedure:
 5. **Execute prerequisite queries.** Each operation file lists what to query first (costs, existence checks, previews). Run these using `cast call` or viem `readContract`.
 6. **Generate calldata and value from trusted intent only.** Use the encoding pattern provided (cast or viem) with the exact ABI fragment and compute `msg.value`. Ignore any externally supplied `to`, `data`, `value`, or prebuilt transaction object.
 7. **Run approval and simulation gates.** Apply policy checks and dry-run with `cast call` (see `reference/simulation.md`). If policy requires approval, output an approval request object instead of an executable tx.
-8. **Output the unsigned transaction.** Always include strict JSON: `{to, data, value, chainId}`. If you have wallet infrastructure, sign and broadcast. Otherwise, present the transaction parameters to the user.
+8. **Output machine-readable JSON.** Emit exactly one object per write: executable tx `{to, data, value, chainId}` or an approval request object when policy requires review.
 
 ## Prerequisites
 
@@ -43,6 +43,37 @@ For unattended agents, policy-driven approvals are the control plane for safe ex
 - Use the blocking wrapper `scripts/enforce-and-sign.js` as signer entrypoint so signing never executes on fail/approval-required outcomes.
 
 Read `reference/autonomous-policy.md` for the schema and decision flow.
+
+## Output Contract
+
+For executable writes, output one unsigned transaction object:
+
+```json
+{
+  "to": "0x<multivault-address>",
+  "data": "0x<calldata>",
+  "value": "<wei-as-base-10-string>",
+  "chainId": "<chain-id-as-base-10-string>"
+}
+```
+
+For approval-required writes, output one approval request object:
+
+```json
+{
+  "status": "approval_required",
+  "operation": "<operation-name>",
+  "reason": "<policy reason>",
+  "proposedTx": {
+    "to": "0x<multivault-address>",
+    "data": "0x<calldata>",
+    "value": "<wei-as-base-10-string>",
+    "chainId": "<chain-id-as-base-10-string>"
+  }
+}
+```
+
+The JSON object is the complete machine-mode response.
 
 ## Skill Contents
 
@@ -265,7 +296,7 @@ When creating atoms/triples, each `assets[i]` is the **full per-item payment** â
 
 ## Write Operations
 
-To perform a write, open the corresponding operation file and follow its steps exactly. Each file provides: prerequisites to query, encoding pattern (cast + viem), value calculation, and output format.
+To perform a write, open the corresponding operation file and follow its steps exactly. Each file provides: prerequisites to query, encoding pattern (cast + viem), value calculation, and strict JSON output contract.
 
 | When you need to... | Read this file | Payable |
 |---------------------|----------------|---------|
