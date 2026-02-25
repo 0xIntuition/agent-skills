@@ -182,6 +182,12 @@ Schema references:
 
 Runtime enforcement guide: `reference/runtime-enforcement.md`
 
+Validator exit codes:
+
+- `0`: pass (safe to sign)
+- `1`: validation fail/error
+- `2`: approval required (do not sign)
+
 ## Prompt-Injection Safety Pattern
 
 Keep planning and execution separated:

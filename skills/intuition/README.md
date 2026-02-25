@@ -90,6 +90,7 @@ For unattended execution, configure policy-driven approvals in [reference/autono
 - Guardrails: chain/address allowlists, value limits, mandatory simulation, structured approval requests
 - Injection defense: untrusted research cannot supply `to/data/value`; executor recomputes tx fields and verifies calldata selector/args
 - Runtime blocking gate: run `scripts/validate-tx-from-intent.js` before every sign/broadcast (see [reference/runtime-enforcement.md](./reference/runtime-enforcement.md))
+- End-to-end entrypoint: use `scripts/enforce-and-sign.js` to validate first and sign only on pass
 
 ## Key V2 API Details
 

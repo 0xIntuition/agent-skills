@@ -21,7 +21,10 @@ Usage:
 Notes:
   - If --policy is omitted, defaults to INTUITION_POLICY_PATH or ./.intuition/autonomous-policy.json
   - If policy.execution.requireSimulation=true, both --rpc and --from are required
-  - Exits non-zero on validation failure`)
+  - Exit codes:
+      0 = pass (safe to sign)
+      1 = validation fail/error
+      2 = approval required (do not sign)`)
 }
 
 function parseArgs(argv) {
@@ -241,6 +244,39 @@ function getPolicyPath(cliPolicy) {
   if (cliPolicy) return cliPolicy
   if (process.env.INTUITION_POLICY_PATH) return process.env.INTUITION_POLICY_PATH
   return path.resolve('.intuition', 'autonomous-policy.json')
+}
+
+function approvalDecision(policy, intent, txValue) {
+  const mode = typeof policy.mode === 'string' ? policy.mode : 'manual-review'
+  const reasons = []
+
+  if (!['strict', 'permissive', 'manual-review'].includes(mode)) {
+    reasons.push(`unsupported policy mode: ${mode}`)
+  }
+
+  if (mode === 'manual-review') {
+    reasons.push('policy mode requires manual review for all writes')
+  }
+
+  const requireReviewOps = Array.isArray(policy.approval?.requireReviewForOperations)
+    ? policy.approval.requireReviewForOperations
+    : []
+  if (requireReviewOps.includes(intent.operation)) {
+    reasons.push(`operation ${intent.operation} requires review by policy`)
+  }
+
+  if (policy.approval?.autoApproveUpToWei !== undefined) {
+    const autoApproveUpToWei = toBigInt(policy.approval.autoApproveUpToWei, 'policy.approval.autoApproveUpToWei')
+    if (txValue > autoApproveUpToWei) {
+      reasons.push(`tx value ${txValue} exceeds auto-approve threshold ${autoApproveUpToWei}`)
+    }
+  }
+
+  return {
+    mode,
+    requiresApproval: reasons.length > 0,
+    reasons,
+  }
 }
 
 function main() {
@@ -505,13 +541,29 @@ function main() {
     process.exit(1)
   }
 
+  const txValue = toBigInt(tx.value, 'tx.value')
+  const decision = approvalDecision(policy, intent, txValue)
+  if (decision.requiresApproval) {
+    console.log(JSON.stringify({
+      status: 'approval_required',
+      operation: intent.operation,
+      reason: decision.reasons.join('; '),
+      reasons: decision.reasons,
+      mode: decision.mode,
+      proposedTx: tx,
+      checks,
+    }, null, 2))
+    process.exit(2)
+  }
+
   console.log(JSON.stringify({
     status: 'pass',
     checks,
+    mode: decision.mode,
     operation: intent.operation,
     chainId: Number(chainId),
     to: tx.to,
-    value: String(toBigInt(tx.value, 'tx.value')),
+    value: String(txValue),
   }, null, 2))
 }
 

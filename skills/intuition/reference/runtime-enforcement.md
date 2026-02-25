@@ -9,6 +9,7 @@ No transaction is signed unless `validateTxFromIntent` returns `status = pass`.
 ## Artifacts
 
 - Validator script: `scripts/validate-tx-from-intent.js`
+- Blocking wrapper: `scripts/enforce-and-sign.js`
 - Schemas:
   - `reference/schemas/intent.schema.json`
   - `reference/schemas/unsigned-tx.schema.json`
@@ -40,6 +41,28 @@ node scripts/validate-tx-from-intent.js \
 
 If this command exits non-zero, do not sign.
 
+## One-Step Blocking Sign Command
+
+Use the wrapper below to guarantee signing runs only after validator pass:
+
+```bash
+node scripts/enforce-and-sign.js \
+  --intent /path/intent.json \
+  --tx /path/unsigned-tx.json \
+  --policy /path/autonomous-policy.json \
+  --rpc https://rpc.intuition.systems/http \
+  --from 0xYourSignerAddress \
+  --spent-today-wei 0 \
+  --pending-count 0 \
+  -- your-signer-command --tx-file /path/unsigned-tx.json
+```
+
+Wrapper exit codes:
+
+- `0`: validation pass and signer command succeeded
+- `1`: validation failed/error or signer command failed
+- `2`: approval required (blocked, signer command not executed)
+
 ## Executor Integration Pattern
 
 1. Planner emits intent.
@@ -49,6 +72,8 @@ If this command exits non-zero, do not sign.
 5. If fail:
    - in `manual-review` mode, return approval request
    - otherwise hard-block and alert
+
+Using `scripts/enforce-and-sign.js` makes this flow a single required entrypoint.
 
 ## Minimum Blocking Checks
 
@@ -71,4 +96,4 @@ If this command exits non-zero, do not sign.
 
 ## Recommended Next Step
 
-Wrap the validator in signer service middleware so all code paths (API, queue worker, cron, CLI) hit the same blocking gate.
+Call `scripts/enforce-and-sign.js` (or equivalent library wrapper) from signer middleware so all code paths (API, queue worker, cron, CLI) hit the same blocking gate.

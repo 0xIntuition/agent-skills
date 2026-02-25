@@ -40,6 +40,7 @@ For unattended agents, policy-driven approvals are the control plane for safe ex
 - If no policy file is available, use `manual-review` mode.
 - Policy gates run before signing and broadcasting. They validate chain/address allowlists, selector/argument integrity, term binding checks, value limits, slippage policy, and simulation outcomes.
 - Runtime enforcement is executed by the validator: `scripts/validate-tx-from-intent.js` (see `reference/runtime-enforcement.md`).
+- Use the blocking wrapper `scripts/enforce-and-sign.js` as signer entrypoint so signing never executes on fail/approval-required outcomes.
 
 Read `reference/autonomous-policy.md` for the schema and decision flow.
 
