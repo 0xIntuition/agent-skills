@@ -13,7 +13,7 @@ Deposit $TRUST into an existing atom or triple vault, minting shares to the rece
 cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" 0x<termId> --rpc-url $RPC
 
 # Get default curve ID (use cached value if already queried this session)
-CURVE_ID=$(cast call $MULTIVAULT "getBondingCurveConfig()((address,uint256))" --rpc-url $RPC | grep -oP '\d+$')
+CURVE_ID=$(cast call $MULTIVAULT "getBondingCurveConfig()((address,uint256))" --rpc-url $RPC | awk -F', ' '{print $2}' | tr -d ')')
 
 # Preview the deposit to see expected shares and fees
 cast call $MULTIVAULT "previewDeposit(bytes32,uint256,uint256)(uint256,uint256)" \
@@ -62,11 +62,11 @@ VALUE=$(cast --to-wei 0.01)
 
 ```
 Transaction: deposit
-  To:       0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e
+  To:       $MULTIVAULT
   Data:     0x<calldata>
   Value:    <wei> (<amount> $TRUST)
-  Chain ID: 1155
-  Network:  Intuition Mainnet
+  Chain ID: $CHAIN_ID
+  Network:  $NETWORK
 
   Deposits <amount> $TRUST into vault <termId>
   Expected shares: <shares> (after fees: <assetsAfterFees>)
@@ -90,4 +90,4 @@ const minShares = expectedShares * 95n / 100n
 
 - The `curveId` must match a configured bonding curve. Query `getBondingCurveConfig()` once per session — the mainnet default is `1`.
 - To signal disagreement on a triple, deposit into the counter-triple instead: get its ID via `getCounterIdFromTripleId(tripleId)`.
-- The receiver address is who gets the shares — this can differ from the sender.
+- The receiver address is who gets the shares — this can differ from the sender. When receiver differs from sender, the receiver must first call `approve(senderAddress, 1)` (1 = DEPOSIT). Enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH.

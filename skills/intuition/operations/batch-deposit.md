@@ -14,7 +14,7 @@ cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" 0x<termId1> --rpc-url $RPC
 cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" 0x<termId2> --rpc-url $RPC
 
 # Get default curve ID (use cached value if already queried)
-CURVE_ID=$(cast call $MULTIVAULT "getBondingCurveConfig()((address,uint256))" --rpc-url $RPC | grep -oP '\d+$')
+CURVE_ID=$(cast call $MULTIVAULT "getBondingCurveConfig()((address,uint256))" --rpc-url $RPC | awk -F', ' '{print $2}' | tr -d ')')
 
 # Preview each deposit
 cast call $MULTIVAULT "previewDeposit(bytes32,uint256,uint256)(uint256,uint256)" 0x<termId1> $CURVE_ID <amount1> --rpc-url $RPC
@@ -58,11 +58,11 @@ const value = assets.reduce((sum, a) => sum + a, 0n)
 
 ```
 Transaction: depositBatch
-  To:       0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e
+  To:       $MULTIVAULT
   Data:     0x<calldata>
   Value:    <total wei> (<amount> $TRUST)
-  Chain ID: 1155
-  Network:  Intuition Mainnet
+  Chain ID: $CHAIN_ID
+  Network:  $NETWORK
 
   Deposits into <count> vaults: [<termId1>, <termId2>]
   Amounts: [<amount1>, <amount2>] $TRUST
@@ -73,3 +73,4 @@ Transaction: depositBatch
 - All arrays (termIds, curveIds, assets, minShares) must be the same length.
 - Each `curveIds` element can differ, but typically they're all the same `defaultCurveId`.
 - Total `msg.value` must equal the sum of the `assets` array exactly.
+- When receiver differs from sender, the receiver must first call `approve(senderAddress, 1)` (1 = DEPOSIT). Enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH.

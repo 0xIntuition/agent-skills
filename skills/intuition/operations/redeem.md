@@ -60,11 +60,11 @@ Redeem returns TRUST to the receiver; it accepts none. Value must be 0.
 
 ```
 Transaction: redeem
-  To:       0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e
+  To:       $MULTIVAULT
   Data:     0x<calldata>
   Value:    0
-  Chain ID: 1155
-  Network:  Intuition Mainnet
+  Chain ID: $CHAIN_ID
+  Network:  $NETWORK
 
   Redeems <shares> shares from vault <termId>
   Expected return: <assetsAfterFees> $TRUST (after exit fees)
@@ -87,3 +87,4 @@ const minAssets = expectedAssets * 95n / 100n
 - Redeem is non-payable. Value must be 0.
 - Use `maxRedeem(address, termId, curveId)` to get the maximum redeemable shares.
 - Exit fees apply. Always preview before executing.
+- When the caller redeems on behalf of another account, the share owner must first call `approve(callerAddress, 2)` (2 = REDEMPTION). Enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH.
