@@ -10,7 +10,21 @@ Scope:
 ## Files
 
 - `tests/prompts/b1-validation-prompts.md` -- offline validation-oriented agent consumption prompts
-- `tests/prompts/b2-onchain-prompts.md` -- funded-wallet broadcast verification prompts
+- `tests/prompts/b1-graphql-prompts.md` -- GraphQL discovery prompts (search, traverse, compose, safety)
+- `tests/prompts/b2-onchain-prompts.md` -- unsigned-transaction templates plus explicit post-broadcast checks
+- `tests/prompts/b2-onchain-integration-prompts.md` -- full integration prompts (simulate, broadcast, verify)
+
+## Modes
+
+1. Template mode
+- Use when validating skill behavior in any environment.
+- Agent returns unsigned transaction JSON only.
+- Broadcast and checks run in the harness outside the prompt.
+
+2. Full integration mode
+- Use when validating autonomous end-to-end behavior with a funded testnet signer.
+- Agent performs full lifecycle: build, simulate, broadcast, verify.
+- Prompt assumes environment variables are pre-provisioned by the local harness.
 
 ## Suggested Runner
 
@@ -25,4 +39,5 @@ claude -p "<prompt>" \
 
 - Prefer testnet (`chainId=13579`) for repeatable integration testing.
 - Enforce strict JSON output in prompts for deterministic parsing.
-- Keep wallet keys/signing out of prompts; signer setup belongs to the test harness environment.
+- Never place private keys directly in prompts.
+- In full integration mode, signer material remains in `.env` / harness environment and is only referenced by variable name.

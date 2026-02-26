@@ -136,19 +136,26 @@ Variables: `{ "searchTerm": "%ethereum%", "limit": 20 }`
 
 ### Search via Database Function
 
-The `search_term` function provides text search across atoms:
+The `search_term` function provides text search across atoms and triples. It returns `terms` (not `atoms`), so access atom/triple data through nested relations:
 
 ```graphql
 query SearchTerm($query: String!, $limit: Int) {
   search_term(args: { query: $query }, limit: $limit) {
-    term_id
-    label
-    image
+    id
     type
-    creator { id label }
+    atom { term_id label image type creator { id label } }
+    triple {
+      term_id
+      subject { label }
+      predicate { label }
+      object { label }
+    }
   }
 }
 ```
+
+- `type` is `"Atom"` or `"Triple"` — check before accessing `atom` or `triple`.
+- `id` on `terms` matches `term_id` on the nested `atom` or `triple`.
 
 Variables: `{ "query": "ethereum", "limit": 20 }`
 
