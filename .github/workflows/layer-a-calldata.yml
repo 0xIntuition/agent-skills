@@ -1,0 +1,61 @@
+name: Layer A Calldata
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'skills/intuition/**'
+      - 'scripts/pass2-calldata-verification.sh'
+      - '.github/workflows/layer-a-calldata.yml'
+  pull_request:
+    paths:
+      - 'skills/intuition/**'
+      - 'scripts/pass2-calldata-verification.sh'
+      - '.github/workflows/layer-a-calldata.yml'
+  workflow_dispatch:
+    inputs:
+      run_edge:
+        description: 'Also run on-chain edge-case checks (requires RPC reachability)'
+        required: false
+        default: 'false'
+
+jobs:
+  calldata-roundtrip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Verify cast
+        run: cast --version
+
+      - name: Layer A round-trip checks
+        run: ./scripts/pass2-calldata-verification.sh
+
+  edge-cases:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_edge == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Verify cast
+        run: cast --version
+
+      - name: Layer B-ish edge-case checks
+        env:
+          RPC: https://rpc.intuition.systems/http
+          MULTIVAULT: 0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e
+          SENDER: 0x1111111111111111111111111111111111111111
+        run: ./scripts/pass2-edge-case-tests.sh
