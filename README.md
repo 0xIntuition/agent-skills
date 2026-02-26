@@ -46,6 +46,13 @@ agent-skills/
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on adding new skills to this repo.
 
+## Testing
+
+Testing is documented in [TESTING.md](TESTING.md), including:
+- Layer A deterministic calldata checks (`scripts/pass2-calldata-verification.sh`)
+- Layer A.5 edge-case RPC checks (`scripts/pass2-edge-case-tests.sh`)
+- Layer B prompt suites for autonomous consumption and on-chain integration (`tests/prompts/`)
+
 ## References
 
 - [Intuition Protocol](https://intuition.systems)
