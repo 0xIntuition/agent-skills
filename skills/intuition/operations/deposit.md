@@ -27,18 +27,23 @@ cast call $MULTIVAULT "previewDeposit(bytes32,uint256,uint256)(uint256,uint256)"
 
 ```bash
 DEPOSIT_WEI=$(cast --to-wei 0.01)
+SENDER=0x<signer>
+RECEIVER=${RECEIVER:-$SENDER}
 CALLDATA=$(cast calldata "deposit(address,bytes32,uint256,uint256)" \
-  0x<receiver> 0x<termId> $CURVE_ID 0)
+  $RECEIVER 0x<termId> $CURVE_ID 0)
 ```
 
 ### Using viem
 
 ```typescript
+// Default receiver to signer when not explicitly provided.
+const receiver = providedReceiver ?? account.address
+
 const data = encodeFunctionData({
   abi: parseAbi(['function deposit(address receiver, bytes32 termId, uint256 curveId, uint256 minShares) payable returns (uint256)']),
   functionName: 'deposit',
   args: [
-    receiverAddress,   // who gets the shares
+    receiver,          // who gets the shares
     termId,            // bytes32 vault ID
     defaultCurveId,    // from getBondingCurveConfig()
     0n,                // minShares (0 = no slippage protection)
@@ -89,6 +94,8 @@ const minShares = expectedShares * 95n / 100n
 
 ## Important
 
+- Receiver defaults to the signer address when not explicitly provided.
+- Receiver is always a non-zero EVM address.
 - The `curveId` must match a configured bonding curve. Query `getBondingCurveConfig()` once per session — the mainnet default is `1`.
 - To signal disagreement on a triple, deposit into the counter-triple instead: get its ID via `getCounterIdFromTripleId(tripleId)`.
 - The receiver address is who gets the shares — this can differ from the sender. When receiver differs from sender, the receiver must first call `approve(senderAddress, 1)` (1 = DEPOSIT). Enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH.

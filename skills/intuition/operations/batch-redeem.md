@@ -23,17 +23,22 @@ cast call $MULTIVAULT "previewRedeem(bytes32,uint256,uint256)(uint256,uint256)" 
 ### Using cast
 
 ```bash
+SENDER=0x<signer>
+RECEIVER=${RECEIVER:-$SENDER}
 CALLDATA=$(cast calldata "redeemBatch(address,bytes32[],uint256[],uint256[],uint256[])" \
-  0x<receiver> "[0x<termId1>,0x<termId2>]" "[$CURVE_ID,$CURVE_ID]" "[<shares1>,<shares2>]" "[0,0]")
+  $RECEIVER "[0x<termId1>,0x<termId2>]" "[$CURVE_ID,$CURVE_ID]" "[<shares1>,<shares2>]" "[0,0]")
 ```
 
 ### Using viem
 
 ```typescript
+// Default receiver to signer when not explicitly provided.
+const receiver = providedReceiver ?? account.address
+
 const data = encodeFunctionData({
   abi: parseAbi(['function redeemBatch(address receiver, bytes32[] termIds, uint256[] curveIds, uint256[] shares, uint256[] minAssets) returns (uint256[])']),
   functionName: 'redeemBatch',
-  args: [receiverAddress, termIds, curveIds, shares, minAssets],
+  args: [receiver, termIds, curveIds, shares, minAssets],
 })
 ```
 
@@ -62,6 +67,8 @@ Set `to` to `$MULTIVAULT` and `chainId` to `$CHAIN_ID`.
 
 ## Important
 
+- Receiver defaults to the signer address when not explicitly provided.
+- Receiver is always a non-zero EVM address.
 - Redeem is non-payable. Value must be 0.
 - All arrays (termIds, curveIds, shares, minAssets) must be the same length.
 - Exit fees apply to each redemption. Preview each one before executing.

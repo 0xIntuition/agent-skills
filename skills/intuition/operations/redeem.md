@@ -28,18 +28,23 @@ cast call $MULTIVAULT "previewRedeem(bytes32,uint256,uint256)(uint256,uint256)" 
 ### Using cast
 
 ```bash
+SENDER=0x<signer>
+RECEIVER=${RECEIVER:-$SENDER}
 CALLDATA=$(cast calldata "redeem(address,bytes32,uint256,uint256,uint256)" \
-  0x<receiver> 0x<termId> $CURVE_ID $SHARES 0)
+  $RECEIVER 0x<termId> $CURVE_ID $SHARES 0)
 ```
 
 ### Using viem
 
 ```typescript
+// Default receiver to signer when not explicitly provided.
+const receiver = providedReceiver ?? account.address
+
 const data = encodeFunctionData({
   abi: parseAbi(['function redeem(address receiver, bytes32 termId, uint256 curveId, uint256 shares, uint256 minAssets) returns (uint256)']),
   functionName: 'redeem',
   args: [
-    receiverAddress,   // who gets the $TRUST
+    receiver,          // who gets the $TRUST
     termId,            // bytes32 vault ID
     defaultCurveId,    // from getBondingCurveConfig()
     sharesToRedeem,    // number of shares to burn
@@ -85,6 +90,8 @@ const minAssets = expectedAssets * 95n / 100n
 
 ## Important
 
+- Receiver defaults to the signer address when not explicitly provided.
+- Receiver is always a non-zero EVM address.
 - Redeem is non-payable. Value must be 0.
 - Use `maxRedeem(address, termId, curveId)` to get the maximum redeemable shares.
 - Exit fees apply. Always preview before executing.

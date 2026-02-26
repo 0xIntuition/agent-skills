@@ -81,6 +81,7 @@ Disabling claim policy does not disable execution safety gates. These remain man
     "rejectExternallyProvidedTxFields": true,
     "requireSelectorMatch": true,
     "requireIntentArgBinding": true,
+    "requireNonZeroReceiver": true,
     "requireStakeTermExists": true,
     "requireTripleAtomsExist": true
   },
@@ -129,11 +130,14 @@ Minimum intent object:
 5. Validate term binding:
    - stake/redeem operations: term exists on-chain (`isTermCreated(termId)`).
    - triple creation: subject/predicate/object atoms exist on-chain.
-6. Validate chain allowlist and exact MultiVault address match for the chain.
-7. Validate operation-specific and global value limits (applies to every write: create*, deposit*, redeem*).
-8. Resolve slippage bounds from previews (`minShares` / `minAssets`) per policy.
-9. Simulate transaction with the exact calldata and value.
-10. Evaluate approval mode:
+6. Resolve receiver for receiver-bearing operations:
+   - if receiver is omitted, set it to signer address.
+   - receiver value is a non-zero address.
+7. Validate chain allowlist and exact MultiVault address match for the chain.
+8. Validate operation-specific and global value limits (applies to every write: create*, deposit*, redeem*).
+9. Resolve slippage bounds from previews (`minShares` / `minAssets`) per policy.
+10. Simulate transaction with the exact calldata and value.
+11. Evaluate approval mode:
    - `manual-review` mode always emits an approval request object.
    - `strict`/`permissive` emit approval request if value/op exceeds approval policy.
    - Otherwise emit executable tx JSON.

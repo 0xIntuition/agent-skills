@@ -26,17 +26,22 @@ cast call $MULTIVAULT "previewDeposit(bytes32,uint256,uint256)(uint256,uint256)"
 ### Using cast
 
 ```bash
+SENDER=0x<signer>
+RECEIVER=${RECEIVER:-$SENDER}
 CALLDATA=$(cast calldata "depositBatch(address,bytes32[],uint256[],uint256[],uint256[])" \
-  0x<receiver> "[0x<termId1>,0x<termId2>]" "[$CURVE_ID,$CURVE_ID]" "[1000000000000000,2000000000000000]" "[0,0]")
+  $RECEIVER "[0x<termId1>,0x<termId2>]" "[$CURVE_ID,$CURVE_ID]" "[1000000000000000,2000000000000000]" "[0,0]")
 ```
 
 ### Using viem
 
 ```typescript
+// Default receiver to signer when not explicitly provided.
+const receiver = providedReceiver ?? account.address
+
 const data = encodeFunctionData({
   abi: parseAbi(['function depositBatch(address receiver, bytes32[] termIds, uint256[] curveIds, uint256[] assets, uint256[] minShares) payable returns (uint256[])']),
   functionName: 'depositBatch',
-  args: [receiverAddress, termIds, curveIds, assets, minShares],
+  args: [receiver, termIds, curveIds, assets, minShares],
 })
 ```
 
@@ -71,6 +76,8 @@ Set `to` to `$MULTIVAULT`, `value` to the Step 3 result, and `chainId` to `$CHAI
 
 ## Important
 
+- Receiver defaults to the signer address when not explicitly provided.
+- Receiver is always a non-zero EVM address.
 - All arrays (termIds, curveIds, assets, minShares) must be the same length.
 - Each `curveIds` element can differ, but typically they're all the same `defaultCurveId`.
 - Total `msg.value` must equal the sum of the `assets` array exactly.
