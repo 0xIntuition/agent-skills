@@ -135,6 +135,7 @@ const [totalAssets, totalShares] = await client.readContract({
 # Mainnet shown — substitute testnet values if user selected testnet
 RPC="https://rpc.intuition.systems/http"
 MULTIVAULT="0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e"
+GRAPHQL="https://mainnet.intuition.sh/v1/graphql"
 CHAIN_ID=1155
 NETWORK="Intuition Mainnet"
 
@@ -159,4 +160,4 @@ const tripleCost = await client.readContract({ address: MULTIVAULT, abi: readAbi
 const [registry, defaultCurveId] = await client.readContract({ address: MULTIVAULT, abi: readAbi, functionName: 'getBondingCurveConfig' })
 ```
 
-You now have `atomCost`, `tripleCost`, `defaultCurveId`, `$CHAIN_ID`, and `$NETWORK`. Use these in all subsequent operations — including the Step 4 JSON output contract in each operation file.
+You now have `atomCost`, `tripleCost`, `defaultCurveId`, `$GRAPHQL`, `$CHAIN_ID`, and `$NETWORK`. Use these in all subsequent operations — including the Step 4 JSON output contract in each operation file and GraphQL queries in `reference/graphql-queries.md`.
