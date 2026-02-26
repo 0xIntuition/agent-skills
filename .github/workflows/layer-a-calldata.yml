@@ -39,7 +39,7 @@ jobs:
         run: ./scripts/pass2-calldata-verification.sh
 
   edge-cases:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_edge == 'true' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_edge == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
