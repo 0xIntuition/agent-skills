@@ -256,19 +256,29 @@ const writeAbi = parseAbi([
 
 ### Atoms: URI to bytes Encoding
 
-Atoms are created from arbitrary bytes. For string-based URIs:
+Atoms are created from arbitrary bytes. The encoding path depends on the atom content:
 
 ```typescript
 import { stringToHex } from 'viem'
-const atomData = stringToHex('https://ethereum.org')
-// Or for plain text:
+
+// Structured entity (person, org, concept with metadata) — pin to IPFS first
+// See reference/schemas.md for the full pin flow
+const atomData = stringToHex('ipfs://bafy...')  // URI from pin mutation
+
+// Plain string (simple label, tag — no metadata needed)
 const atomData = stringToHex('Ethereum')
+
+// Ethereum address
+const atomData = stringToHex('0x1234...')
 ```
 
 ```bash
-# cast equivalent
-ATOM_DATA=$(cast --from-utf8 "Ethereum")
+# cast equivalents
+ATOM_DATA=$(cast --from-utf8 "ipfs://bafy...")   # structured (after pinning)
+ATOM_DATA=$(cast --from-utf8 "Ethereum")          # plain string
 ```
+
+**Use structured atoms** (IPFS pin) for real-world entities that benefit from name, description, image, and URL metadata. **Use plain strings** for simple labels, tags, or predicates where metadata is not needed. See `operations/create-atoms.md` → Choose Encoding Path for the full decision table.
 
 The atom's `bytes32` ID is deterministically computed from its data via `calculateAtomId(bytes)`. Creating an atom that already exists reverts with `MultiVault_AtomExists`. Always check `isTermCreated(calculateAtomId(data))` before calling `createAtoms`.
 
@@ -339,7 +349,7 @@ These facts govern all Intuition transactions. Reference them when encoding oper
 
 5. **Receiver semantics are explicit** -- `deposit`/`redeem` operations require a non-zero receiver address. When receiver is omitted in intent, use the signer address.
 
-6. **Atom data is hex-encoded bytes** -- Use `stringToHex('Ethereum')` in viem, `cast --from-utf8 "Ethereum"` in foundry.
+6. **Atom data is hex-encoded bytes** -- Use `stringToHex(uri)` in viem, `cast --from-utf8 "uri"` in foundry. The input is either an IPFS URI from pinning (`ipfs://bafy...`) or a plain string (`Ethereum`).
 
 7. **msg.value is a separate transaction field** -- The $TRUST sent with the transaction is the `value` field, separate from the encoded `data`.
 
