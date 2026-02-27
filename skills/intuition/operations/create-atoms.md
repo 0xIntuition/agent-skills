@@ -6,6 +6,24 @@ Create one or more atom vaults from URI data. Follow these steps in order.
 
 **Function:** `createAtoms(bytes[] atomDatas, uint256[] assets) payable returns (bytes32[])`
 
+## Atom Data: Choose Encoding Path
+
+Before encoding, determine how to prepare atom data:
+
+| Atom Content | Preparation | Next Step |
+|-------------|-------------|-----------|
+| Structured entity (person, org, concept with metadata) | Pin to IPFS first → `reference/schemas.md` | Use returned `ipfs://` URI as atom data |
+| Plain string (simple label, tag) | No preparation needed | Use the string directly |
+| Ethereum address | No preparation needed | Use the `0x...` address directly |
+
+**Default to the structured path** for any atom representing a real-world entity. The structured path produces rich atoms with name, description, image, and URL metadata in the knowledge graph. Plain strings produce bare atoms with no metadata.
+
+### Structured Atoms (Pin First)
+
+For structured atoms, complete the full pin flow in `reference/schemas.md` before continuing here. The pin flow returns an IPFS URI (`ipfs://bafy...`). Use that URI as the atom data in Step 2 below.
+
+If pinning fails, do not proceed to Step 2. See `reference/schemas.md` → Pin Failure Handling.
+
 ## Step 1: Query Prerequisites
 
 Run these queries before encoding. Use values from session setup if already cached.
@@ -15,7 +33,12 @@ Run these queries before encoding. Use values from session setup if already cach
 ATOM_COST=$(cast call $MULTIVAULT "getAtomCost()(uint256)" --rpc-url $RPC)
 
 # Optional: check if atom already exists (skip creation if true)
-ATOM_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" $(cast --from-utf8 "Ethereum") --rpc-url $RPC)
+# Use the exact atom data you will send to createAtoms.
+# Structured atom (default): URI returned from reference/schemas.md pin flow
+ATOM_DATA=$(cast --from-utf8 "$URI")
+# Plain string alternative (use instead of the line above):
+# ATOM_DATA=$(cast --from-utf8 "Ethereum")
+ATOM_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" "$ATOM_DATA" --rpc-url $RPC)
 EXISTS=$(cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" $ATOM_ID --rpc-url $RPC)
 ```
 
@@ -28,7 +51,12 @@ Encode each URI as hex bytes, then build the calldata.
 ### Using cast
 
 ```bash
-ATOM_DATA=$(cast --from-utf8 "Ethereum")
+# From IPFS URI (structured atom — after pinning via reference/schemas.md)
+ATOM_DATA=$(cast --from-utf8 "$URI")  # $URI = "ipfs://bafy..."
+
+# Plain string alternative (simple label; use instead of the line above)
+# ATOM_DATA=$(cast --from-utf8 "Ethereum")
+
 CALLDATA=$(cast calldata "createAtoms(bytes[],uint256[])" "[$ATOM_DATA]" "[$ATOM_COST]")
 ```
 
@@ -38,8 +66,15 @@ CALLDATA=$(cast calldata "createAtoms(bytes[],uint256[])" "[$ATOM_DATA]" "[$ATOM
 import { encodeFunctionData, parseAbi, stringToHex } from 'viem'
 
 const atomCost = /* result from step 1 */
-const uris = ['Ethereum', 'Bitcoin', 'Solana']
-const atomDatas = uris.map(u => stringToHex(u))
+
+// From IPFS URIs (structured atoms — after pinning via reference/schemas.md)
+const ipfsUris = ['ipfs://bafy...a', 'ipfs://bafy...b', 'ipfs://bafy...c']
+const atomDatas = ipfsUris.map(u => stringToHex(u))
+
+// Or from plain strings (simple labels)
+// const labels = ['Ethereum', 'Bitcoin', 'Solana']
+// const atomDatas = labels.map(u => stringToHex(u))
+
 const assets = [atomCost, atomCost, atomCost] // each element must be >= atomCost
 
 const data = encodeFunctionData({
@@ -83,6 +118,20 @@ Output one unsigned transaction object with resolved values from this session:
 ```
 
 Set `to` to `$MULTIVAULT`, `value` to the Step 3 result, and `chainId` to `$CHAIN_ID`.
+
+## Batch Pinning
+
+For batch creation of structured atoms, pin each entity separately, then submit one batched `createAtoms` call. Preserve strict index mapping through the entire flow:
+
+```
+entity[0] → pin → uri[0] → atomData[0] → assets[0]
+entity[1] → pin → uri[1] → atomData[1] → assets[1]
+entity[2] → pin → uri[2] → atomData[2] → assets[2]
+```
+
+Before calling `createAtoms`, assert that `atomDatas[]` and `assets[]` are the same length and in the original entity order. If any single pin fails, stop and do not emit a transaction for the batch.
+
+See `reference/schemas.md` → Batch Pinning for the full pattern.
 
 ## Important
 

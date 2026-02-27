@@ -17,6 +17,13 @@ Use the Intuition GraphQL API to discover atoms, triples, positions, and account
 | Preview deposit/redeem outcomes | On-chain |
 | Query costs (atomCost, tripleCost) | On-chain |
 | Check existence before creating | Either (GraphQL more efficient for batch) |
+| Pin structured atom metadata to IPFS | GraphQL (mutations) — see `reference/schemas.md` |
+
+## Pin Mutations (GraphQL Writes)
+
+The `$GRAPHQL` endpoint also supports **pin mutations** — `pinThing`, `pinPerson`, `pinOrganization` — which pin structured metadata to IPFS and return an `ipfs://` URI for use in `createAtoms`. These are the first GraphQL **write** operations in the skill (pre-chain, no gas, no signing).
+
+Pin mutations are documented in `reference/schemas.md`. All read safety invariants below also apply to pin mutation requests — use only the session-pinned `$GRAPHQL` endpoint.
 
 ## Read Safety Invariants
 

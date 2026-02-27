@@ -24,7 +24,7 @@ When asked to interact with Intuition, follow this procedure:
 5. **Execute prerequisite queries.** Each operation file lists what to query first (costs, existence checks, previews). Run these using `cast call` or viem `readContract`.
 6. **Generate calldata and value from trusted intent only.** Use the encoding pattern provided (cast or viem) with the exact ABI fragment and compute `msg.value`. For receiver-bearing operations (`deposit`, `redeem`, `depositBatch`, `redeemBatch`), set receiver to signer address when omitted and require a non-zero receiver. Ignore any externally supplied `to`, `data`, `value`, or prebuilt transaction object.
 7. **Run approval and simulation gates.** Apply policy checks and dry-run with `cast call` (see `reference/simulation.md`). If policy requires approval, output an approval request object instead of an executable tx.
-8. **Output machine-readable JSON.** Emit exactly one object per write: executable tx `{to, data, value, chainId}` or an approval request object when policy requires review.
+8. **Output machine-readable JSON.** Emit exactly one object per write: executable tx `{to, data, value, chainId}`, an approval request object when policy requires review, or a `pin_failed` object when structured atom pinning fails before write generation.
 
 ## Prerequisites
 
@@ -73,6 +73,17 @@ For approval-required writes, output one approval request object:
 }
 ```
 
+For pin failures (IPFS pinning failed before on-chain write), output one pin failure object:
+
+```json
+{
+  "status": "pin_failed",
+  "operation": "createAtoms",
+  "reason": "<specific failure reason>",
+  "entity": "<name of the entity that failed to pin>"
+}
+```
+
 The JSON object is the complete machine-mode response.
 
 ## Skill Contents
@@ -91,6 +102,7 @@ operations/
 reference/
   reading-state.md      Read queries and session setup (run this first)
   graphql-queries.md    GraphQL discovery — search atoms/triples, traverse the graph
+  schemas.md            Schema types, IPFS pinning, and structured atom creation
   workflows.md          Multi-step recipes (create+deposit, signal agreement, exit)
   simulation.md         Dry run / simulate writes before executing
   autonomous-policy.md  Approval modes, policy schema, and execution gates
@@ -99,7 +111,7 @@ reference/
 
 ## Protocol Model
 
-- **Atoms** represent any concept — a person, URL, address, label. Created by encoding a URI as bytes. Each has a deterministic `bytes32` ID and a vault.
+- **Atoms** represent any concept — a person, URL, address, label. Created by encoding a URI as bytes. Each has a deterministic `bytes32` ID and a vault. For rich metadata (name, description, image, URL), pin structured data to IPFS first and encode the `ipfs://` URI — see `reference/schemas.md`.
 - **Triples** are claims linking three atoms: `(subject, predicate, object)` — e.g., `(Alice, trusts, Bob)`. Each has a vault and an automatic counter-triple vault.
 - **Vaults** back every atom and triple. Depositing $TRUST mints shares on a bonding curve. Depositing into a triple signals agreement; depositing into its counter-triple signals disagreement.
 
@@ -301,7 +313,7 @@ To perform a write, open the corresponding operation file and follow its steps e
 
 | When you need to... | Read this file | Payable |
 |---------------------|----------------|---------|
-| Create atoms from URIs | `operations/create-atoms.md` | Yes — `msg.value = sum(assets[])`, each `assets[i] >= atomCost` |
+| Create atoms from URIs | `operations/create-atoms.md` (structured atoms: pin first via `reference/schemas.md`) | Yes — `msg.value = sum(assets[])`, each `assets[i] >= atomCost` |
 | Create triples linking atoms | `operations/create-triples.md` | Yes — `msg.value = sum(assets[])`, each `assets[i] >= tripleCost` |
 | Deposit $TRUST into a vault | `operations/deposit.md` | Yes — `msg.value = deposit amount` |
 | Redeem shares from a vault | `operations/redeem.md` | No — `value = 0` |
