@@ -287,16 +287,21 @@ A triple links three existing atoms: `(subject, predicate, object)`. All three m
 
 ```graphql
 query FindPredicate($label: String!) {
-  atoms(where: { label: { _eq: $label }, type: { _neq: "TextObject" } }) {
+  atoms(
+    where: { label: { _eq: $label } }
+    order_by: { as_predicate_triples_aggregate: { count: desc } }
+  ) {
     term_id label type
     as_predicate_triples_aggregate { aggregate { count } }
   }
 }
 ```
 
-Filter out `TextObject` type to avoid legacy plain-string duplicates. The atom with the highest `as_predicate_triples_aggregate.count` is the canonical version.
+Results include all atom types, ordered by usage count. Interpret them as follows:
 
-To create a new predicate, pin it to IPFS via `reference/schemas.md` (use `pinThing` with the predicate label as `name`).
+- **Non-TextObject result exists** (type: `Thing`, `Person`, `Organization`) — use it. This is the canonical IPFS-pinned version.
+- **Only TextObject results exist** — the label is in use as a legacy plain-string predicate. Do not reuse the TextObject atom. Instead, create a pinned replacement via `reference/schemas.md` (use `pinThing` with the predicate label as `name`). The new pinned version becomes the canonical predicate going forward.
+- **No results** — the predicate doesn't exist yet. Create it by pinning via `reference/schemas.md`.
 
 ### Vaults: Shares Model
 
