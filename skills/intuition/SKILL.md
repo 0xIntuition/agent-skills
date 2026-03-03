@@ -153,6 +153,19 @@ Which network?
 
 Use the selected row for all operations in the session. Switch with `--chain mainnet` or `--chain testnet`.
 
+### Network Characteristics
+
+Beyond addresses and chain IDs, the networks have different data characteristics:
+
+| Aspect | Mainnet | Testnet |
+|--------|---------|---------|
+| Economic signal | Real $TRUST staked — positions reflect genuine conviction | Test tokens, no real value signal |
+| Agent infrastructure | Active — Eliza protocol registrations, named agent atoms | Less agent activity |
+| Curation quality | Structured efforts (e.g., 693 Verified Ethereum Contracts tagged) | More experimental |
+| Contested claims | Exist with real stakes, mostly unchallenged | Less meaningful |
+
+Use testnet for development and testing writes. Use mainnet for production exploration and meaningful attestations.
+
 ### Custom Chain Definition (viem)
 
 Intuition runs on an L3 not indexed by Etherscan. Agents must define the chain manually:
