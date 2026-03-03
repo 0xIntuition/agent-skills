@@ -4,7 +4,7 @@ description: Use this skill when interacting with the Intuition Protocol on-chai
 license: MIT
 metadata:
   author: jonathanprozzi
-  version: "0.1.0"
+  version: "0.2.0"
 argument-hint: "[--read|--write] [--chain mainnet|testnet] [operation] [args...]"
 allowed-tools: "Bash, Read"
 ---
