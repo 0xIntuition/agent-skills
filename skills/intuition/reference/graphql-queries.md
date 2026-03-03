@@ -538,6 +538,123 @@ query ClaimsForPredicate($predicateId: String!, $limit: Int!) {
 }
 ```
 
+## Graph Analysis Queries
+
+Use these patterns to understand graph structure, find enrichment targets, and plan autonomous exploration.
+
+### Predicate Usage Counts
+
+See which predicates exist and how heavily they're used. Essential for deciding whether to reuse an existing predicate or create a new one:
+
+```graphql
+query PredicateUsage($limit: Int!) {
+  triples(
+    limit: $limit
+    distinct_on: [predicate_id]
+    order_by: { predicate_id: asc }
+  ) {
+    predicate {
+      term_id
+      label
+      as_predicate_triples_aggregate {
+        aggregate { count }
+      }
+    }
+  }
+}
+```
+
+Variables: `{ "limit": 50 }`
+
+**Reuse guideline:** Before creating a new predicate atom, check if an equivalent already exists. Prefer existing predicates with >10 triples — they're established vocabulary. If the top result is `has tag` at 50K+, the graph needs more semantic predicates (`is`, `implements`, `built on`, etc.).
+
+### Atom Type Distribution
+
+Understand graph composition at a glance:
+
+```graphql
+query AtomTypeDistribution {
+  things: atoms_aggregate(where: { type: { _eq: "Thing" } }) { aggregate { count } }
+  text: atoms_aggregate(where: { type: { _eq: "TextObject" } }) { aggregate { count } }
+  accounts: atoms_aggregate(where: { type: { _eq: "Account" } }) { aggregate { count } }
+  caip10: atoms_aggregate(where: { type: { _eq: "Caip10" } }) { aggregate { count } }
+  total: atoms_aggregate { aggregate { count } }
+  total_triples: triples_aggregate { aggregate { count } }
+}
+```
+
+### Tag Cluster Analysis
+
+Find atoms grouped by a common tag that lack semantic depth — prime enrichment targets:
+
+```graphql
+query TagCluster($tagLabel: String!, $limit: Int!) {
+  # Atoms tagged with this label
+  tagged: triples(
+    where: {
+      predicate: { label: { _eq: "has tag" } }
+      object: { label: { _ilike: $tagLabel } }
+    }
+    limit: $limit
+    order_by: { created_at: desc }
+  ) {
+    subject {
+      term_id
+      label
+      type
+      image
+    }
+    object { term_id label }
+    term { vaults { position_count total_shares } }
+  }
+  # How many semantic triples exist for the same subjects
+  semantic: triples_aggregate(
+    where: {
+      predicate: { label: { _nin: ["has tag", "has-tag", "follow"] } }
+      subject: {
+        as_subject_triples: {
+          predicate: { label: { _eq: "has tag" } }
+          object: { label: { _ilike: $tagLabel } }
+        }
+      }
+    }
+  ) {
+    aggregate { count }
+  }
+}
+```
+
+Variables: `{ "tagLabel": "%AI Agent%", "limit": 50 }`
+
+Compare `tagged` count vs `semantic` count. A cluster with 34 tagged atoms but only 5 semantic triples is a high-value enrichment target.
+
+### Orphaned Atom Discovery
+
+Find atoms with staking activity but no triple connections — candidates for graph linking:
+
+```graphql
+query OrphanedAtoms($minPositions: Int!, $limit: Int!) {
+  atoms(
+    where: {
+      _and: [
+        { term: { vaults: { position_count: { _gte: $minPositions } } } }
+        { _not: { as_subject_triples: {} } }
+        { _not: { as_object_triples: {} } }
+      ]
+    }
+    limit: $limit
+    order_by: { term: { vaults_aggregate: { sum: { position_count: desc } } } }
+  ) {
+    term_id
+    label
+    type
+    term { vaults { position_count total_shares } }
+  }
+}
+```
+
+Variables: `{ "minPositions": 1, "limit": 20 }`
+
 ## Endpoint Guardrail
 
 The `$GRAPHQL` endpoint must come from the SKILL.md network configuration table, set during session setup:
