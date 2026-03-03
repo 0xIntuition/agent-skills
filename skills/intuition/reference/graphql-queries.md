@@ -471,6 +471,40 @@ query TripleDetails($tripleId: String!) {
 }
 ```
 
+### Triple Consensus (Agreement vs Disagreement)
+
+Compare staking on a triple and its counter-triple to assess consensus. Every triple has an automatic counter-triple vault — depositing into the counter-triple signals disagreement with the claim.
+
+```graphql
+query TripleConsensus($tripleId: String!) {
+  triple(term_id: $tripleId) {
+    term_id
+    counter_term_id
+    subject { term_id label }
+    predicate { term_id label }
+    object { term_id label }
+    term {
+      vaults {
+        curve_id
+        total_shares
+        current_share_price
+        position_count
+      }
+    }
+    counter_term {
+      vaults {
+        curve_id
+        total_shares
+        current_share_price
+        position_count
+      }
+    }
+  }
+}
+```
+
+Compare `term.vaults.position_count` (agreement) vs `counter_term.vaults.position_count` (disagreement). A triple with many positions FOR and zero AGAINST has unchallenged consensus — it may be well-evidenced or simply unreviewed.
+
 ### Account to Positions to Atoms/Triples
 
 Discover what an address has staked on:
