@@ -8,11 +8,10 @@ Create structured atoms with rich metadata (name, description, image, URL) by pi
 
 | Atom Content | Encoding Path | Example |
 |-------------|---------------|---------|
-| Structured entity | Pin → `toHex(ipfsUri)` | People, orgs, concepts with metadata |
-| Plain string | `toHex("string")` | Simple labels, tags (no metadata) |
-| Ethereum address | `toHex("0x...")` | Wallet/contract identities (CAIP10) |
+| Any entity, concept, predicate, or label | Pin → `toHex(ipfsUri)` | People, orgs, projects, predicates (`"implements"`, `"trusts"`), concepts (`"AI Agent Framework"`) |
+| Blockchain address (CAIP-10) | `toHex("caip10:eip155:{chainId}:{address}")` | Wallet/contract identities |
 
-**Default to the structured (pin) path** for any atom that represents a real-world entity. Use plain string only for simple labels or tags where metadata is not needed.
+**Always pin to IPFS.** This matches the Intuition Portal's creation flow. On-chain data confirms canonical atoms — including predicates — are IPFS-pinned (type: Thing). Plain string atoms exist as legacy duplicates with negligible usage. The only exception is CAIP-10 blockchain addresses, which use a deterministic URI format.
 
 ## Schema Types
 
@@ -215,13 +214,9 @@ If pinning fails — `errors` in response, missing `uri`, non-`ipfs://` prefix, 
 
 For batch operations, if any single pin fails, stop and do not emit a transaction for the batch.
 
-### Plain-String Fallback
+### No Plain-String Fallback
 
-Plain-string encoding (skipping the pin step) is supported but **disabled by default**. Only use plain-string encoding when:
-- The intent explicitly requests a plain-string atom (e.g., a simple label or tag)
-- A policy or configuration explicitly enables plain-string fallback
-
-Do not silently degrade from structured metadata to bare strings. If pinning fails and plain-string fallback is not explicitly enabled, return the failure object above.
+Do not fall back to plain-string encoding when pinning fails. Plain string atoms create bare `TextObject` entries with no metadata — these become legacy duplicates disconnected from the canonical graph. If pinning fails, return the failure object above and do not proceed with atom creation.
 
 ## Image Handling
 

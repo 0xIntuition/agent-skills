@@ -256,29 +256,26 @@ const writeAbi = parseAbi([
 
 ### Atoms: URI to bytes Encoding
 
-Atoms are created from arbitrary bytes. The encoding path depends on the atom content:
+Atoms are created from arbitrary bytes. **All atoms are pinned to IPFS** except blockchain addresses (CAIP-10). This matches the Intuition Portal's creation flow.
 
 ```typescript
 import { stringToHex } from 'viem'
 
-// Structured entity (person, org, concept with metadata) — pin to IPFS first
+// All entities, concepts, predicates, labels — pin to IPFS first
 // See reference/schemas.md for the full pin flow
 const atomData = stringToHex('ipfs://bafy...')  // URI from pin mutation
 
-// Plain string (simple label, tag — no metadata needed)
-const atomData = stringToHex('Ethereum')
-
-// Ethereum address
-const atomData = stringToHex('0x1234...')
+// Blockchain address (CAIP-10) — no IPFS needed
+const atomData = stringToHex('caip10:eip155:1:0x1234...abcd')
 ```
 
 ```bash
 # cast equivalents
-ATOM_DATA=$(cast --from-utf8 "ipfs://bafy...")   # structured (after pinning)
-ATOM_DATA=$(cast --from-utf8 "Ethereum")          # plain string
+ATOM_DATA=$(cast --from-utf8 "ipfs://bafy...")                    # after pinning
+ATOM_DATA=$(cast --from-utf8 "caip10:eip155:1:0x1234...abcd")    # CAIP-10 address
 ```
 
-**Use structured atoms** (IPFS pin) for real-world entities that benefit from name, description, image, and URL metadata. **Use plain strings** for simple labels, tags, or predicates where metadata is not needed. See `operations/create-atoms.md` → Choose Encoding Path for the full decision table.
+Pin everything — including predicates (`"implements"`, `"trusts"`) and concept labels (`"AI Agent Framework"`). On-chain data confirms canonical atoms are IPFS-pinned; plain string versions are legacy duplicates. See `operations/create-atoms.md` for the full encoding flow.
 
 The atom's `bytes32` ID is deterministically computed from its data via `calculateAtomId(bytes)`. Creating an atom that already exists reverts with `MultiVault_AtomExists`. Always check `isTermCreated(calculateAtomId(data))` before calling `createAtoms`.
 
@@ -286,16 +283,20 @@ The atom's `bytes32` ID is deterministically computed from its data via `calcula
 
 A triple links three existing atoms: `(subject, predicate, object)`. All three must be created first. Every triple automatically gets a **counter-triple** vault for signaling disagreement.
 
-**Known predicate and object atom IDs** (deterministic — recomputable via `calculateAtomId(stringToHex(label))`):
+**Finding predicate atoms**: Do not hardcode predicate atom IDs. Canonical predicates are IPFS-pinned atoms — their IDs depend on the pinned URI, not a plain string. Query the graph to find existing predicates by label:
 
-| Label | Atom ID |
-|-------|---------|
-| `is` | `0xb0681668ca193e8608b43adea19fecbbe0828ef5afc941cef257d30a20564ef1` |
-| `AI Agent` | `0x4990eef19ea1d9b893c1802af9e2ec37fbc1ae138868959ebc23c98b1fc9565e` |
-| `collaboratesWith` | `0xb3cf9e60665fe7674e3798d2452604431d4d4dc96aa8d6965016205d00e45c8e` |
-| `participatesIn` | `0x2952108d352c2ffe1b89b208c4f078165c83c3ac995c3d6d1f41b18a19ce2f23` |
+```graphql
+query FindPredicate($label: String!) {
+  atoms(where: { label: { _eq: $label }, type: { _neq: "TextObject" } }) {
+    term_id label type
+    as_predicate_triples_aggregate { aggregate { count } }
+  }
+}
+```
 
-You can create new predicates by creating a string atom (e.g., `"trusts"`, `"recommends"`).
+Filter out `TextObject` type to avoid legacy plain-string duplicates. The atom with the highest `as_predicate_triples_aggregate.count` is the canonical version.
+
+To create a new predicate, pin it to IPFS via `reference/schemas.md` (use `pinThing` with the predicate label as `name`).
 
 ### Vaults: Shares Model
 
@@ -323,7 +324,7 @@ To perform a write, open the corresponding operation file and follow its steps e
 
 | When you need to... | Read this file | Payable |
 |---------------------|----------------|---------|
-| Create atoms from URIs | `operations/create-atoms.md` (structured atoms: pin first via `reference/schemas.md`) | Yes — `msg.value = sum(assets[])`, each `assets[i] >= atomCost` |
+| Create atoms from URIs | `operations/create-atoms.md` (always pin to IPFS first via `reference/schemas.md`, except CAIP-10) | Yes — `msg.value = sum(assets[])`, each `assets[i] >= atomCost` |
 | Create triples linking atoms | `operations/create-triples.md` | Yes — `msg.value = sum(assets[])`, each `assets[i] >= tripleCost` |
 | Deposit $TRUST into a vault | `operations/deposit.md` | Yes — `msg.value = deposit amount` |
 | Redeem shares from a vault | `operations/redeem.md` | No — `value = 0` |
@@ -349,7 +350,7 @@ These facts govern all Intuition transactions. Reference them when encoding oper
 
 5. **Receiver semantics are explicit** -- `deposit`/`redeem` operations require a non-zero receiver address. When receiver is omitted in intent, use the signer address.
 
-6. **Atom data is hex-encoded bytes** -- Use `stringToHex(uri)` in viem, `cast --from-utf8 "uri"` in foundry. The input is either an IPFS URI from pinning (`ipfs://bafy...`) or a plain string (`Ethereum`).
+6. **Atom data is hex-encoded bytes** -- Use `stringToHex(uri)` in viem, `cast --from-utf8 "uri"` in foundry. The input is an IPFS URI from pinning (`ipfs://bafy...`) or a CAIP-10 URI for blockchain addresses (`caip10:eip155:{chainId}:{address}`).
 
 7. **msg.value is a separate transaction field** -- The $TRUST sent with the transaction is the `value` field, separate from the encoded `data`.
 
