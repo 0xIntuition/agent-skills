@@ -19,6 +19,17 @@ Use the Intuition GraphQL API to discover atoms, triples, positions, and account
 | Check existence before creating | Either (GraphQL more efficient for batch) |
 | Pin structured atom metadata to IPFS | GraphQL (mutations) — see `reference/schemas.md` |
 
+## Graph Landscape
+
+Context for what the knowledge graph contains, as of early 2026. Use the Graph Analysis Queries section to get current numbers.
+
+- **Scale**: ~170K atoms, ~65K triples on both mainnet and testnet
+- **Tag dominance**: ~80% of all triples use the `has tag` predicate. Semantic predicates (`is`, `implements`, `uses`, `founded by`) account for <1% of triples. This is the primary enrichment opportunity.
+- **Atom types**: TextObject (~48%), Thing (~31%), Account (~11%), Caip10 (~10%). TextObject dominance means many atoms are plain strings rather than IPFS-pinned structured entities.
+- **Staking distribution**: Heavy power-law. A few atoms/triples have thousands of positions; most have 1-3.
+- **Duplicate atoms**: The same label can appear as multiple atoms with different `term_id`s (content-addressed IDs mean different encoding paths produce different atoms). Always resolve by `term_id`, not label.
+- **Predicate vocabulary**: 50+ distinct predicates exist, but most triples use just 3-5 (`has tag`, `follow`, `name`, `timestamp`). Rich semantic predicates are sparse and high-value.
+
 ## Pin Mutations (GraphQL Writes)
 
 The `$GRAPHQL` endpoint also supports **pin mutations** — `pinThing`, `pinPerson`, `pinOrganization` — which pin structured metadata to IPFS and return an `ipfs://` URI for use in `createAtoms`. These are the first GraphQL **write** operations in the skill (pre-chain, no gas, no signing).
