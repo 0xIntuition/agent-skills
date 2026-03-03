@@ -589,21 +589,20 @@ Use these patterns to understand graph structure, find enrichment targets, and p
 
 ### Predicate Usage Counts
 
-See which predicates exist and how heavily they're used. Essential for deciding whether to reuse an existing predicate or create a new one:
+See which predicates exist and how heavily they're used, ordered by actual usage. Essential for deciding whether to reuse an existing predicate or create a new one:
 
 ```graphql
 query PredicateUsage($limit: Int!) {
-  triples(
+  atoms(
+    where: { as_predicate_triples: {} }
+    order_by: { as_predicate_triples_aggregate: { count: desc } }
     limit: $limit
-    distinct_on: [predicate_id]
-    order_by: { predicate_id: asc }
   ) {
-    predicate {
-      term_id
-      label
-      as_predicate_triples_aggregate {
-        aggregate { count }
-      }
+    term_id
+    label
+    type
+    as_predicate_triples_aggregate {
+      aggregate { count }
     }
   }
 }
@@ -611,7 +610,9 @@ query PredicateUsage($limit: Int!) {
 
 Variables: `{ "limit": 50 }`
 
-**Reuse guideline:** Before creating a new predicate atom, check if an equivalent already exists. Prefer existing predicates with >10 triples — they're established vocabulary. If the top result is `has tag` at 50K+, the graph needs more semantic predicates (`is`, `implements`, `built on`, etc.).
+Results are ordered by triple count descending — the most-used predicates appear first. The `type` field distinguishes canonical IPFS-pinned predicates (type: `Thing`) from legacy plain-string duplicates (type: `TextObject`).
+
+**Reuse guideline:** Before creating a new predicate atom, check if an equivalent already exists. Prefer non-TextObject predicates with >10 triples — they're established, IPFS-pinned vocabulary. If the top result is `has tag` at 50K+, the graph needs more semantic predicates (`is`, `implements`, `built on`, etc.).
 
 ### Atom Type Distribution
 
