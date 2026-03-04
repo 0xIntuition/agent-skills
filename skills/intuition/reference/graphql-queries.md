@@ -610,7 +610,7 @@ query PredicateUsage($limit: Int!) {
 
 Variables: `{ "limit": 50 }`
 
-Results are ordered by triple count descending — the most-used predicates appear first. The `type` field distinguishes canonical IPFS-pinned predicates (type: `Thing`) from legacy plain-string duplicates (type: `TextObject`).
+Results are ordered by triple count descending — the most-used predicates appear first. The `type` field distinguishes canonical predicates (any non-`TextObject` type) from legacy plain-string duplicates (`TextObject`).
 
 **Reuse guideline:** Before creating a new predicate atom, check if an equivalent already exists. Prefer non-TextObject predicates with >10 triples — they're established, IPFS-pinned vocabulary. If the top result is `has tag` at 50K+, the graph needs more semantic predicates (`is`, `implements`, `built on`, etc.).
 
