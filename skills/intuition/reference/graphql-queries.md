@@ -19,6 +19,17 @@ Use the Intuition GraphQL API to discover atoms, triples, positions, and account
 | Check existence before creating | Either (GraphQL more efficient for batch) |
 | Pin structured atom metadata to IPFS | GraphQL (mutations) — see `reference/schemas.md` |
 
+## Graph Landscape
+
+Context for what the knowledge graph contains, as of early 2026. Use the Graph Analysis Queries section to get current numbers.
+
+- **Scale**: ~170K atoms, ~65K triples on both mainnet and testnet
+- **Tag dominance**: ~80% of all triples use the `has tag` predicate. Semantic predicates (`is`, `implements`, `uses`, `founded by`) account for <1% of triples. This is the primary enrichment opportunity.
+- **Atom types**: TextObject (~48%), Thing (~31%), Account (~11%), Caip10 (~10%). TextObject dominance means many atoms are plain strings rather than IPFS-pinned structured entities.
+- **Staking distribution**: Heavy power-law. A few atoms/triples have thousands of positions; most have 1-3.
+- **Duplicate atoms**: The same label can appear as multiple atoms with different `term_id`s (content-addressed IDs mean different encoding paths produce different atoms). Always resolve by `term_id`, not label.
+- **Predicate vocabulary**: 50+ distinct predicates exist, but most triples use just 3-5 (`has tag`, `follow`, `name`, `timestamp`). Rich semantic predicates are sparse and high-value.
+
 ## Pin Mutations (GraphQL Writes)
 
 The `$GRAPHQL` endpoint also supports **pin mutations** — `pinThing`, `pinPerson`, `pinOrganization` — which pin structured metadata to IPFS and return an `ipfs://` URI for use in `createAtoms`. These are the first GraphQL **write** operations in the skill (pre-chain, no gas, no signing).
@@ -471,6 +482,40 @@ query TripleDetails($tripleId: String!) {
 }
 ```
 
+### Triple Consensus (Agreement vs Disagreement)
+
+Compare staking on a triple and its counter-triple to assess consensus. Every triple has an automatic counter-triple vault — depositing into the counter-triple signals disagreement with the claim.
+
+```graphql
+query TripleConsensus($tripleId: String!) {
+  triple(term_id: $tripleId) {
+    term_id
+    counter_term_id
+    subject { term_id label }
+    predicate { term_id label }
+    object { term_id label }
+    term {
+      vaults {
+        curve_id
+        total_shares
+        current_share_price
+        position_count
+      }
+    }
+    counter_term {
+      vaults {
+        curve_id
+        total_shares
+        current_share_price
+        position_count
+      }
+    }
+  }
+}
+```
+
+Compare `term.vaults.position_count` (agreement) vs `counter_term.vaults.position_count` (disagreement). A triple with many positions FOR and zero AGAINST has unchallenged consensus — it may be well-evidenced or simply unreviewed.
+
 ### Account to Positions to Atoms/Triples
 
 Discover what an address has staked on:
@@ -537,6 +582,124 @@ query ClaimsForPredicate($predicateId: String!, $limit: Int!) {
   }
 }
 ```
+
+## Graph Analysis Queries
+
+Use these patterns to understand graph structure, find enrichment targets, and plan autonomous exploration.
+
+### Predicate Usage Counts
+
+See which predicates exist and how heavily they're used, ordered by actual usage. Essential for deciding whether to reuse an existing predicate or create a new one:
+
+```graphql
+query PredicateUsage($limit: Int!) {
+  atoms(
+    where: { as_predicate_triples: {} }
+    order_by: { as_predicate_triples_aggregate: { count: desc } }
+    limit: $limit
+  ) {
+    term_id
+    label
+    type
+    as_predicate_triples_aggregate {
+      aggregate { count }
+    }
+  }
+}
+```
+
+Variables: `{ "limit": 50 }`
+
+Results are ordered by triple count descending — the most-used predicates appear first. The `type` field distinguishes canonical predicates (any non-`TextObject` type) from legacy plain-string duplicates (`TextObject`).
+
+**Reuse guideline:** Before creating a new predicate atom, check if an equivalent already exists. Prefer non-TextObject predicates with >10 triples — they're established, IPFS-pinned vocabulary. If the top result is `has tag` at 50K+, the graph needs more semantic predicates (`is`, `implements`, `built on`, etc.).
+
+### Atom Type Distribution
+
+Understand graph composition at a glance:
+
+```graphql
+query AtomTypeDistribution {
+  things: atoms_aggregate(where: { type: { _eq: "Thing" } }) { aggregate { count } }
+  text: atoms_aggregate(where: { type: { _eq: "TextObject" } }) { aggregate { count } }
+  accounts: atoms_aggregate(where: { type: { _eq: "Account" } }) { aggregate { count } }
+  caip10: atoms_aggregate(where: { type: { _eq: "Caip10" } }) { aggregate { count } }
+  total: atoms_aggregate { aggregate { count } }
+  total_triples: triples_aggregate { aggregate { count } }
+}
+```
+
+### Tag Cluster Analysis
+
+Find atoms grouped by a common tag that lack semantic depth — prime enrichment targets:
+
+```graphql
+query TagCluster($tagLabel: String!, $limit: Int!) {
+  # Atoms tagged with this label
+  tagged: triples(
+    where: {
+      predicate: { label: { _eq: "has tag" } }
+      object: { label: { _ilike: $tagLabel } }
+    }
+    limit: $limit
+    order_by: { created_at: desc }
+  ) {
+    subject {
+      term_id
+      label
+      type
+      image
+    }
+    object { term_id label }
+    term { vaults { position_count total_shares } }
+  }
+  # How many semantic triples exist for the same subjects
+  semantic: triples_aggregate(
+    where: {
+      predicate: { label: { _nin: ["has tag", "has-tag", "follow"] } }
+      subject: {
+        as_subject_triples: {
+          predicate: { label: { _eq: "has tag" } }
+          object: { label: { _ilike: $tagLabel } }
+        }
+      }
+    }
+  ) {
+    aggregate { count }
+  }
+}
+```
+
+Variables: `{ "tagLabel": "%AI Agent%", "limit": 50 }`
+
+Compare `tagged` count vs `semantic` count. A cluster with 34 tagged atoms but only 5 semantic triples is a high-value enrichment target.
+
+### Orphaned Atom Discovery
+
+Find atoms with staking activity but no triple connections — candidates for graph linking:
+
+```graphql
+query OrphanedAtoms($minPositions: Int!, $limit: Int!) {
+  atoms(
+    where: {
+      _and: [
+        { term: { vaults: { position_count: { _gte: $minPositions } } } }
+        { _not: { as_subject_triples: {} } }
+        { _not: { as_object_triples: {} } }
+      ]
+    }
+    limit: $limit
+    order_by: { term: { vaults_aggregate: { sum: { position_count: desc } } } }
+  ) {
+    term_id
+    label
+    type
+    term { vaults { position_count total_shares } }
+  }
+}
+```
+
+Variables: `{ "minPositions": 1, "limit": 20 }`
 
 ## Endpoint Guardrail
 
