@@ -8,21 +8,30 @@ Create one or more atom vaults from URI data. Follow these steps in order.
 
 ## Atom Data: Choose Encoding Path
 
-Before encoding, determine how to prepare atom data:
+**All atoms are pinned to IPFS** except blockchain addresses (CAIP-10). This matches the Intuition Portal's creation flow and ensures atoms have rich metadata (name, description, image, URL) in the knowledge graph.
 
 | Atom Content | Preparation | Next Step |
 |-------------|-------------|-----------|
-| Structured entity (person, org, concept with metadata) | Pin to IPFS first → `reference/schemas.md` | Use returned `ipfs://` URI as atom data |
-| Plain string (simple label, tag) | No preparation needed | Use the string directly |
-| Ethereum address | No preparation needed | Use the `0x...` address directly |
+| Any entity, concept, predicate, or label (`"Ethereum"`, `"implements"`, `"AI Agent Framework"`, people, orgs, projects) | Pin to IPFS first → `reference/schemas.md` | Use returned `ipfs://` URI in Step 1 |
+| Blockchain address (CAIP-10) | Generate URI: `caip10:eip155:{chainId}:{address}` | Step 1 |
 
-**Default to the structured path** for any atom representing a real-world entity. The structured path produces rich atoms with name, description, image, and URL metadata in the knowledge graph. Plain strings produce bare atoms with no metadata.
+Pin everything — including predicates like `"implements"` or `"trusts"`. On-chain data shows canonical predicates are IPFS-pinned atoms (type: Thing), while plain string versions are legacy duplicates with negligible usage (e.g., the pinned `"is"` atom has 429 triples; the plain string `"is"` has 3).
 
-### Structured Atoms (Pin First)
+### Pin First (Default Path)
 
-For structured atoms, complete the full pin flow in `reference/schemas.md` before continuing here. The pin flow returns an IPFS URI (`ipfs://bafy...`). Use that URI as the atom data in Step 2 below.
+Complete the full pin flow in `reference/schemas.md` before continuing here. The pin flow returns an IPFS URI (`ipfs://bafy...`). Use that URI as the atom data in Step 2 below.
 
 If pinning fails, do not proceed to Step 2. See `reference/schemas.md` → Pin Failure Handling.
+
+### CAIP-10 Addresses (No Pin)
+
+For blockchain addresses, generate a CAIP-10 URI directly — no IPFS pinning needed:
+
+```
+caip10:eip155:{chainId}:{address}
+```
+
+Example: `caip10:eip155:1:0x1234...abcd`
 
 ## Step 1: Query Prerequisites
 
@@ -34,10 +43,8 @@ ATOM_COST=$(cast call $MULTIVAULT "getAtomCost()(uint256)" --rpc-url $RPC)
 
 # Optional: check if atom already exists (skip creation if true)
 # Use the exact atom data you will send to createAtoms.
-# Structured atom (default): URI returned from reference/schemas.md pin flow
+# $URI is the IPFS URI from the pin flow, or a CAIP-10 URI for addresses
 ATOM_DATA=$(cast --from-utf8 "$URI")
-# Plain string alternative (use instead of the line above):
-# ATOM_DATA=$(cast --from-utf8 "Ethereum")
 ATOM_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" "$ATOM_DATA" --rpc-url $RPC)
 EXISTS=$(cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" $ATOM_ID --rpc-url $RPC)
 ```
@@ -51,11 +58,8 @@ Encode each URI as hex bytes, then build the calldata.
 ### Using cast
 
 ```bash
-# From IPFS URI (structured atom — after pinning via reference/schemas.md)
-ATOM_DATA=$(cast --from-utf8 "$URI")  # $URI = "ipfs://bafy..."
-
-# Plain string alternative (simple label; use instead of the line above)
-# ATOM_DATA=$(cast --from-utf8 "Ethereum")
+# $URI = "ipfs://bafy..." (from pin flow) or "caip10:eip155:1:0x..." (address)
+ATOM_DATA=$(cast --from-utf8 "$URI")
 
 CALLDATA=$(cast calldata "createAtoms(bytes[],uint256[])" "[$ATOM_DATA]" "[$ATOM_COST]")
 ```
@@ -67,13 +71,10 @@ import { encodeFunctionData, parseAbi, stringToHex } from 'viem'
 
 const atomCost = /* result from step 1 */
 
-// From IPFS URIs (structured atoms — after pinning via reference/schemas.md)
-const ipfsUris = ['ipfs://bafy...a', 'ipfs://bafy...b', 'ipfs://bafy...c']
-const atomDatas = ipfsUris.map(u => stringToHex(u))
-
-// Or from plain strings (simple labels)
-// const labels = ['Ethereum', 'Bitcoin', 'Solana']
-// const atomDatas = labels.map(u => stringToHex(u))
+// From IPFS URIs (after pinning via reference/schemas.md)
+// or CAIP-10 URIs for addresses ("caip10:eip155:1:0x...")
+const uris = ['ipfs://bafy...a', 'ipfs://bafy...b', 'ipfs://bafy...c']
+const atomDatas = uris.map(u => stringToHex(u))
 
 const assets = [atomCost, atomCost, atomCost] // each element must be >= atomCost
 
