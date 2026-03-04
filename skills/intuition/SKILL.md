@@ -299,7 +299,7 @@ query FindPredicate($label: String!) {
 
 Results include all atom types, ordered by usage count. Interpret them as follows:
 
-- **Non-TextObject result exists** (type: `Thing`, `Person`, `Organization`) — use it. This is the canonical IPFS-pinned version.
+- **Non-TextObject result exists** — use it. Any type other than `TextObject` (e.g., `Thing`, `Person`, `Organization`, `Keywords`, `FollowAction`) is a canonical atom with structured metadata.
 - **Only TextObject results exist** — the label is in use as a legacy plain-string predicate. Do not reuse the TextObject atom. Instead, create a pinned replacement via `reference/schemas.md` (use `pinThing` with the predicate label as `name`). The new pinned version becomes the canonical predicate going forward.
 - **No results** — the predicate doesn't exist yet. Create it by pinning via `reference/schemas.md`.
 
