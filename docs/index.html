@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intuition Agent Skills — Skills for agents. Not for humans.</title>
+  <meta name="description" content="Teach your AI agents to interact with the Intuition Protocol on-chain. Pre-built skills with canonical ABIs, unsigned transaction generation, and full protocol coverage.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Intuition Agent Skills">
+  <meta property="og:description" content="Skills for agents. Not for humans. Teach your AI agents to interact with the Intuition Protocol on-chain.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/og-image.svg">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+</head>
+<body>
+
+  <!-- ════ Nav ════ -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="https://intuition.systems" class="nav-brand" target="_blank" rel="noopener">
+        Intuition <span>/</span> <span>Agent Skills</span>
+      </a>
+      <div class="nav-links">
+        <a href="https://github.com/0xIntuition/agent-skills" class="nav-link hide-mobile" target="_blank" rel="noopener">
+          GitHub
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+        <a href="https://github.com/0xIntuition/agent-skills#getting-started" class="btn btn-primary" target="_blank" rel="noopener">Get Started</a>
+      </div>
+    </div>
+    <div class="nav-gradient"></div>
+  </nav>
+
+  <!-- ════ Hero ════ -->
+  <section class="hero" id="hero">
+    <canvas class="hero-canvas" id="entropy-canvas"></canvas>
+    <div class="hero-content reveal">
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        Agent Skills
+      </div>
+      <h1 class="gradient-text-shimmer">Skills for agents.<br>Not for humans.</h1>
+      <p class="hero-desc">Teach your AI agents to interact with the Intuition Protocol on-chain. Pre-built skills with canonical ABIs, unsigned transaction generation, and full protocol coverage.</p>
+      <div class="hero-terminal">
+        <div class="terminal">
+          <div class="terminal-header">
+            <div class="terminal-dots">
+              <span class="terminal-dot"></span>
+              <span class="terminal-dot"></span>
+              <span class="terminal-dot"></span>
+            </div>
+            <button class="terminal-copy" data-copy="npx skills add 0xintuition/agent-skills --skill intuition" aria-label="Copy install command">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </div>
+          <div class="terminal-body">
+            <span class="terminal-prompt">$</span>
+            <span>npx skills add 0xintuition/agent-skills --skill intuition</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-ctas">
+        <a href="https://github.com/0xIntuition/agent-skills#getting-started" class="btn btn-primary" target="_blank" rel="noopener">
+          Get Started
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+        <a href="https://docs.intuition.systems" class="btn btn-secondary" target="_blank" rel="noopener">Read the Docs</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-separator"></div>
+
+  <!-- ════ Problem ════ -->
+  <section class="section" id="problem">
+    <div class="reveal" style="text-align:center; margin-bottom: 48px;">
+      <p class="section-label">The Problem</p>
+      <div class="sparkle-wrapper" data-sparkles>
+        <h2>Why agents need skills</h2>
+      </div>
+    </div>
+    <div class="problems-grid">
+      <div class="glow-card reveal stagger-1">
+        <div class="problem-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <h3>ABIs are invisible</h3>
+        <p>LLMs can't discover contract ABIs on unindexed L3 chains. Without the right interfaces, agents are flying blind.</p>
+      </div>
+      <div class="glow-card reveal stagger-2">
+        <div class="problem-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+        <h3>V2 is tricky</h3>
+        <p>The Intuition Protocol V2 has complex multi-step operations. Bonding curves, batch transactions, and gas estimation all require domain expertise.</p>
+      </div>
+      <div class="glow-card reveal stagger-3">
+        <div class="problem-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Mistakes are expensive</h3>
+        <p>On-chain errors are irreversible. A single wrong parameter can mean lost funds or failed transactions that waste gas.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-separator"></div>
+
+  <!-- ════ Skills Showcase ════ -->
+  <section class="section" id="skills">
+    <div class="reveal" style="text-align:center; margin-bottom: 48px;">
+      <p class="section-label">Available Skills</p>
+      <h2>The Intuition Skill</h2>
+      <p class="section-subtitle">The complete skill for interacting with the Intuition Protocol. Covers atoms, triples, claims, and multi-operations across mainnet and testnet.</p>
+    </div>
+
+    <div class="showcase-card reveal">
+      <div class="showcase-header">
+        <div class="showcase-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          intuition
+        </div>
+        <a href="https://github.com/0xIntuition/agent-skills" class="showcase-repo" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          0xintuition/agent-skills
+        </a>
+      </div>
+
+      <!-- Protocol Diagram -->
+      <div class="showcase-diagram" id="protocol-diagram">
+        <!-- SVG injected by protocol-diagram.js -->
+        <div class="showcase-diagram-fallback">
+          <div class="showcase-body">
+            <div class="showcase-col">
+              <div class="showcase-col-label">Operations</div>
+              <ul class="showcase-list">
+                <li><svg class="showcase-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Create &amp; manage atoms</li>
+                <li><svg class="showcase-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Build triples &amp; claims</li>
+                <li><svg class="showcase-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Batch operations</li>
+                <li><svg class="showcase-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Query protocol state</li>
+                <li><svg class="showcase-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Bonding curve calculations</li>
+                <li><svg class="showcase-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Gas estimation</li>
+              </ul>
+            </div>
+            <div class="showcase-col">
+              <div class="showcase-col-label">Compatible Agents</div>
+              <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                <span class="agent-badge">Claude</span>
+                <span class="agent-badge">GPT-4</span>
+                <span class="agent-badge">Gemini</span>
+                <span class="agent-badge">Any MCP-compatible agent</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agent badges row (visible when diagram is shown, hidden on mobile) -->
+      <div class="showcase-agents-row" style="padding: 20px 28px; border-top: 1px solid var(--border-primary); display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--fg-muted); margin-right:4px;">Compatible Agents</span>
+        <span class="agent-badge">Claude</span>
+        <span class="agent-badge">GPT-4</span>
+        <span class="agent-badge">Gemini</span>
+        <span class="agent-badge">Any MCP-compatible agent</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-separator"></div>
+
+  <!-- ════ Installation ════ -->
+  <section class="section" id="install">
+    <div class="install-wrapper reveal">
+      <p class="section-label">Quick Start</p>
+      <h2 style="text-align:center; margin-bottom:12px;">Install in seconds</h2>
+      <p class="install-desc section-subtitle">One command to add on-chain capabilities to your agent.</p>
+      <div class="terminal">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot"></span>
+          </div>
+          <button class="terminal-copy" data-copy="npx skills add 0xintuition/agent-skills --skill intuition" aria-label="Copy command">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div class="terminal-body">
+          <span class="terminal-prompt">$</span>
+          <span>npx skills add 0xintuition/agent-skills --skill intuition</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-separator"></div>
+
+  <!-- ════ Features ════ -->
+  <section class="section" id="features">
+    <div class="reveal" style="text-align:center; margin-bottom:48px;">
+      <p class="section-label">Features</p>
+      <h2>Built for production</h2>
+      <p class="section-subtitle">Everything you need to build reliable on-chain agents.</p>
+    </div>
+    <div class="features-grid">
+      <div class="glow-card reveal stagger-1">
+        <h3>Canonical ABIs</h3>
+        <p>Always up-to-date contract interfaces for the Intuition Protocol.</p>
+      </div>
+      <div class="glow-card reveal stagger-2">
+        <h3>Unsigned Transactions</h3>
+        <p>Generate transaction data without requiring private keys.</p>
+      </div>
+      <div class="glow-card reveal stagger-3">
+        <h3>Mainnet &amp; Testnet</h3>
+        <p>Full support for both production and test environments.</p>
+      </div>
+      <div class="glow-card reveal stagger-4">
+        <h3>Batch Operations</h3>
+        <p>Create multiple atoms or triples in a single transaction.</p>
+      </div>
+      <div class="glow-card reveal stagger-5">
+        <h3>Bonding Curve Aware</h3>
+        <p>Accurate cost estimation using protocol bonding curves.</p>
+      </div>
+      <div class="glow-card reveal stagger-6">
+        <h3>MIT Licensed</h3>
+        <p>Free to use, modify, and distribute. Open source forever.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-separator"></div>
+
+  <!-- ════ CTA ════ -->
+  <section class="section cta-section cta-glow" id="cta">
+    <div class="reveal">
+      <div class="sparkle-wrapper" data-sparkles>
+        <h2>Ready to give your agents<br>on-chain superpowers?</h2>
+      </div>
+      <p style="max-width:520px; margin: 16px auto 40px;">Install the Intuition skill and start building agents that can interact with the protocol in minutes.</p>
+      <div class="cta-terminal">
+        <div class="terminal">
+          <div class="terminal-header">
+            <div class="terminal-dots">
+              <span class="terminal-dot"></span>
+              <span class="terminal-dot"></span>
+              <span class="terminal-dot"></span>
+            </div>
+            <button class="terminal-copy" data-copy="npx skills add 0xintuition/agent-skills --skill intuition" aria-label="Copy command">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </div>
+          <div class="terminal-body">
+            <span class="terminal-prompt">$</span>
+            <span>npx skills add 0xintuition/agent-skills --skill intuition</span>
+          </div>
+        </div>
+      </div>
+      <div class="cta-buttons">
+        <a href="https://github.com/0xIntuition/agent-skills#getting-started" class="btn btn-primary" target="_blank" rel="noopener">
+          Get Started
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+        <a href="https://docs.intuition.systems" class="btn btn-secondary" target="_blank" rel="noopener">Documentation</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ Footer ════ -->
+  <footer class="footer">
+    <a href="https://intuition.systems" class="footer-brand" target="_blank" rel="noopener">Intuition</a>
+    <div class="footer-links">
+      <a href="https://github.com/0xIntuition/agent-skills" class="footer-link" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://docs.intuition.systems" class="footer-link" target="_blank" rel="noopener">Docs</a>
+      <a href="https://skills.sh" class="footer-link" target="_blank" rel="noopener">skills.sh</a>
+      <a href="https://x.com/0xIntuition" class="footer-link" target="_blank" rel="noopener">Twitter</a>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

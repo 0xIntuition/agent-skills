@@ -1,0 +1,112 @@
+/* Reset & Base Typography */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+code, pre {
+  font-family: var(--font-mono);
+}
+
+h1, h2, h3, h4 {
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+h1 { font-size: clamp(2.5rem, 6vw, 4.5rem); }
+h2 { font-size: clamp(1.75rem, 4vw, 2.75rem); }
+h3 { font-size: clamp(1.125rem, 2vw, 1.375rem); }
+
+p {
+  color: var(--fg-muted);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+}
+
+img, svg { display: block; max-width: 100%; }
+
+/* Selection */
+::selection {
+  background: rgba(var(--accent-rgb), 0.3);
+  color: var(--fg);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: hsla(0, 0%, 100%, 0.1);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: hsla(0, 0%, 100%, 0.2); }
+
+/* Section wrapper */
+.section {
+  padding: 0 24px;
+  max-width: var(--max-width);
+  margin: 0 auto var(--section-gap);
+  position: relative;
+}
+
+/* Reveal animation base */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Section label */
+.section-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+/* Section subtitle */
+.section-subtitle {
+  color: var(--fg-muted);
+  max-width: 560px;
+  margin: 0 auto 48px;
+  text-align: center;
+}
+
+/* Section separator */
+.section-separator {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), 0.3) 30%, rgba(var(--accent-rgb), 0.5) 50%, rgba(var(--accent-rgb), 0.3) 70%, transparent);
+  max-width: var(--max-width);
+  margin: 0 auto var(--section-gap);
+}

@@ -1,0 +1,38 @@
+/* Brand CSS Custom Properties — Intuition Dark Theme */
+:root {
+  /* Base */
+  --bg: hsl(0, 0%, 0%);
+  --fg: hsl(0, 0%, 100%);
+  --fg-muted: hsl(0, 0%, 66%);
+  --text: hsl(0, 0%, 100%);
+
+  /* Borders */
+  --border-primary: hsl(0, 0%, 14%);
+  --border-secondary: hsl(0, 0%, 23%);
+  --border-muted: hsl(0, 0%, 18%);
+
+  /* Card */
+  --card: hsl(0, 0%, 8%);
+  --card-fg: hsl(0, 0%, 100%);
+  --card-fg-muted: hsl(0, 0%, 66%);
+
+  /* Surface */
+  --surface: hsl(0, 0%, 10%);
+  --surface-secondary: hsl(0, 0%, 13%);
+
+  /* Accent — Landing page blue */
+  --accent: #007AFF;
+  --accent-rgb: 0, 122, 255;
+  --accent-secondary: #6c5ce7;
+
+  /* Typography */
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, monospace;
+
+  /* Spacing & Radius */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 16px;
+  --max-width: 1200px;
+  --section-gap: 120px;
+}
