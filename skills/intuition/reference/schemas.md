@@ -17,11 +17,13 @@ Create structured atoms with rich metadata (name, description, image, URL) by pi
 
 Three schema types map to three pin mutations. Choose based on what the atom represents.
 
-| Type | Mutation | Required Fields | Optional Fields | When to Use |
-|------|----------|----------------|-----------------|-------------|
-| **Thing** | `pinThing` | `name` | `description`, `image`, `url` | Products, concepts, topics, anything not a person or org **(default)** |
-| **Person** | `pinPerson` | `name` | `description`, `image`, `url`, `email`, `identifier` | Real individuals only |
-| **Organization** | `pinOrganization` | `name` | `description`, `image`, `url`, `email` | Companies, groups, DAOs, protocols |
+| Type | Mutation | Fields | When to Use |
+|------|----------|--------|-------------|
+| **Thing** | `pinThing` | `name`, `description`, `image`, `url` | Products, concepts, topics, anything not a person or org **(default)** |
+| **Person** | `pinPerson` | `name`, `description`, `image`, `url`, `email`, `identifier` | Real individuals only |
+| **Organization** | `pinOrganization` | `name`, `description`, `image`, `url`, `email` | Companies, groups, DAOs, protocols |
+
+**All fields must be included in every pin mutation call.** Use `""` (empty string) for fields without values. The GraphQL schema marks non-`name` fields as nullable (`String`), but the Hasura request transformation template references every field — omitting any field causes a `Request Transformation Failed` error. See ENG-9725 for details.
 
 ### Schema Type Selection
 
@@ -40,31 +42,37 @@ All three mutations use the same `$GRAPHQL` endpoint already configured for read
 ### pinThing
 
 ```graphql
-mutation pinThing($name: String!, $description: String, $image: String, $url: String) {
+mutation pinThing($name: String!, $description: String!, $image: String!, $url: String!) {
   pinThing(thing: { name: $name, description: $description, image: $image, url: $url }) {
     uri
   }
 }
+# Variables — always include ALL fields (use "" for empty):
+# { "name": "Ethereum", "description": "Decentralized computing platform", "image": "", "url": "https://ethereum.org" }
 ```
 
 ### pinPerson
 
 ```graphql
-mutation pinPerson($name: String!, $description: String, $image: String, $url: String, $email: String, $identifier: String) {
+mutation pinPerson($name: String!, $description: String!, $image: String!, $url: String!, $email: String!, $identifier: String!) {
   pinPerson(person: { name: $name, description: $description, image: $image, url: $url, email: $email, identifier: $identifier }) {
     uri
   }
 }
+# Variables — always include ALL fields (use "" for empty):
+# { "name": "Vitalik Buterin", "description": "Co-founder of Ethereum", "image": "", "url": "", "email": "", "identifier": "" }
 ```
 
 ### pinOrganization
 
 ```graphql
-mutation pinOrganization($name: String!, $description: String, $image: String, $url: String, $email: String) {
+mutation pinOrganization($name: String!, $description: String!, $image: String!, $url: String!, $email: String!) {
   pinOrganization(organization: { name: $name, description: $description, image: $image, url: $url, email: $email }) {
     uri
   }
 }
+# Variables — always include ALL fields (use "" for empty):
+# { "name": "Ethereum Foundation", "description": "Non-profit supporting Ethereum", "image": "", "url": "https://ethereum.foundation", "email": "" }
 ```
 
 ### Pin Response Contract
@@ -85,8 +93,8 @@ The `uri` must be **non-empty** and **prefixed with `ipfs://`** before proceedin
 ## Complete Flow: Schema → Pin → Create Atom
 
 ```
-Step 1: Compose schema fields
-  { "name": "Ethereum", "description": "Decentralized computing platform", "url": "https://ethereum.org" }
+Step 1: Compose schema fields (include ALL fields, use "" for empty)
+  { "name": "Ethereum", "description": "Decentralized computing platform", "image": "", "url": "https://ethereum.org" }
 
 Step 2: Pin via GraphQL mutation
   POST $GRAPHQL → pinThing(thing: {...}) → { uri: "ipfs://bafy..." }
@@ -109,7 +117,7 @@ Steps 1–3 are new. Steps 4–5 are the existing `createAtoms` flow with an IPF
 # Step 2: Pin (fail on non-2xx)
 RESPONSE=$(curl -fsS -X POST "$GRAPHQL" \
   -H "Content-Type: application/json" \
-  -d '{"query":"mutation { pinThing(thing: { name: \"Ethereum\", description: \"Decentralized computing platform\", url: \"https://ethereum.org\" }) { uri } }"}') || {
+  -d '{"query":"mutation { pinThing(thing: { name: \"Ethereum\", description: \"Decentralized computing platform\", image: \"\", url: \"https://ethereum.org\" }) { uri } }"}') || {
   echo "Pin failed — HTTP request error"
   exit 1
 }
@@ -139,10 +147,10 @@ const response = await fetch(GRAPHQL, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    query: `mutation pinThing($name: String!, $description: String, $url: String) {
-      pinThing(thing: { name: $name, description: $description, url: $url }) { uri }
+    query: `mutation pinThing($name: String!, $description: String!, $image: String!, $url: String!) {
+      pinThing(thing: { name: $name, description: $description, image: $image, url: $url }) { uri }
     }`,
-    variables: { name: 'Ethereum', description: 'Decentralized computing platform', url: 'https://ethereum.org' },
+    variables: { name: 'Ethereum', description: 'Decentralized computing platform', image: '', url: 'https://ethereum.org' },
   }),
 })
 
@@ -223,7 +231,7 @@ Do not fall back to plain-string encoding when pinning fails. Plain string atoms
 Images are referenced by URL. Provide an HTTPS URL to an existing public image. The pin mutation stores the URL as-is in the IPFS metadata.
 
 - Reference an existing public image URL
-- Omit the `image` field if no image is available (valid — `image` is optional on all schemas)
+- Set `image` to `""` (empty string) if no image is available — do not omit the field
 
 Image upload, moderation, and CDN storage are not in scope for this skill. Agents needing image upload should use their own hosting infrastructure.
 
@@ -231,9 +239,10 @@ Image upload, moderation, and CDN storage are not in scope for this skill. Agent
 
 Before pinning, validate:
 - `name` is a non-empty string (required for all schema types)
-- `url` is a valid HTTPS URL if provided
-- `image` is a valid URL if provided
-- `email` is a valid email format if provided (Person, Organization only)
+- `url` is a valid HTTPS URL or `""` (empty string)
+- `image` is a valid URL or `""` (empty string)
+- `email` is a valid email format or `""` (Person, Organization only)
+- All fields for the chosen schema type are present in the mutation variables
 
 ## Endpoint Pinning
 
