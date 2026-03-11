@@ -128,7 +128,7 @@ operations/                       (Path B: writes — run session setup first)
 
 ## Protocol Model
 
-- **Atoms** represent any concept — a person, URL, address, label. Created by encoding a URI as bytes. Each has a deterministic `bytes32` ID and a vault. For rich metadata (name, description, image, URL), pin structured data to IPFS first and encode the `ipfs://` URI — see `reference/schemas.md`.
+- **Atoms** represent any concept — a person, URL, address, label. Created by encoding a URI as bytes. Each has a deterministic `bytes32` ID and a vault. For rich metadata (name, description, image, URL), pin structured data to IPFS first and encode the `ipfs://` URI — see `reference/schemas.md`. Atom data aligns with the [Intuition Data Structures](https://github.com/0xIntuition/intuition-data-structures) classification taxonomy — 35 entity types using Schema.org vocabulary. See `reference/schemas.md` for mapping current pin types to classifications.
 - **Triples** are claims linking three atoms: `(subject, predicate, object)` — e.g., `(Alice, trusts, Bob)`. Each has a vault and an automatic counter-triple vault.
 - **Vaults** back every atom and triple. Depositing $TRUST mints shares on a bonding curve. Depositing into a triple signals agreement; depositing into its counter-triple signals disagreement.
 
