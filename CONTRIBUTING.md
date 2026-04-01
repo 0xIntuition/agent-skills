@@ -36,17 +36,36 @@ Once the approach is agreed upon in the issue:
 3. Open a PR linking to the issue
 4. Fill in the PR description: what changed, why, and how to test it
 
-## Skill Types
+## Where Should Your Skill Live?
 
-Not everything needs to be a new skill. Consider what you're building:
+This repo is best for skills the Intuition team is prepared to maintain long-term: the core protocol skill, first-party extensions, and canonical reference material.
 
-| Type | When to Use | Example |
-|------|-------------|---------|
-| **Core skill improvement** | Fix or enhance the existing `intuition` skill | Schema corrections, new transaction patterns, edge case handling |
-| **Ecosystem skill** | A complementary skill that works alongside the core skill | Verification, analysis, or enrichment that feeds into or reads from the knowledge graph |
-| **Reference update** | New or corrected reference material | ABI updates, API changes, new contract deployments |
+For most community integrations -- especially skills that depend on third-party APIs, project-specific logic, or fast-moving external services -- we recommend publishing from your own repo. Users install them the same way, and you keep control over releases, maintenance, and reputation:
 
-Ecosystem skills should **compose with** the core Intuition skill, not replace or duplicate it. A good ecosystem skill has a clear boundary: it does one thing, documents how it interacts with the knowledge graph, and specifies whether it runs before or after the core skill.
+- **You own your release cycle.** Ship updates without waiting on our review queue.
+- **You get your own skills.sh listing.** Your skill is discoverable under your name, building your project's reputation directly.
+- **You control your dependencies.** If your skill calls an external API, you're the right team to maintain that integration.
+- **Users install it the same way.** `npx skills add your-org/your-repo --skill your-skill` works identically to installing from this repo.
+
+The [Composing with the Intuition Skill](#composing-with-the-intuition-skill) section below applies whether your skill lives here or in your own repo -- use it as a guide for building a great integration. If you'd like us to link to your community skill from our README, open an issue and we can link to it.
+
+If you think a skill should live in this repo instead, open an issue first and explain why it should be maintained as a first-party Intuition skill.
+
+### What belongs in this repo
+
+| Type | Example |
+|------|---------|
+| **Core skill fixes and improvements** | Schema corrections, new transaction patterns, edge case handling |
+| **First-party ecosystem skills** | Skills built and maintained by the Intuition team |
+| **Reference updates** | ABI updates, API changes, new contract deployments |
+
+### Usually better as its own repo
+
+| Type | Example |
+|------|---------|
+| **Third-party integrations** | A skill that calls your project's API and feeds results into the knowledge graph |
+| **Standalone tools** | Trust scoring, verification, analysis, or enrichment services |
+| **Experimental skills** | Early-stage ideas that need room to iterate quickly |
 
 ## Composing with the Intuition Skill
 
