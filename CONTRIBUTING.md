@@ -1,6 +1,6 @@
 # Contributing to Intuition Agent Skills
 
-Thank you for your interest in contributing to the Intuition agent skills ecosystem. This repo teaches AI agents to interact correctly with the Intuition Protocol on-chain, so contributions carry real weight -- a bad skill can produce incorrect transactions.
+Thank you for your interest in contributing to the Intuition agent skills ecosystem. This repo is for skills that enable agents to interact correctly with the Intuition Protocol onchain, so contributions carry real weight.
 
 This guide covers the contribution process, skill structure requirements, and review criteria.
 
@@ -38,7 +38,7 @@ Once the approach is agreed upon in the issue:
 
 ## Where Should Your Skill Live?
 
-This repo is best for skills the Intuition team is prepared to maintain long-term: the core protocol skill, first-party extensions, and canonical reference material.
+This repo is best for skills the Intuition team is prepared to maintain long-term: the core Intuition protocol skill ([`intuition`](skills/intuition/)), first-party extensions, and canonical reference material.
 
 For most community integrations -- especially skills that depend on third-party APIs, project-specific logic, or fast-moving external services -- we recommend publishing from your own repo. Users install them the same way, and you keep control over releases, maintenance, and reputation:
 
@@ -69,7 +69,7 @@ If you think a skill should live in this repo instead, open an issue first and e
 
 ## Composing with the Intuition Skill
 
-If your skill feeds data into or reads from the Intuition knowledge graph, your SKILL.md should document three things:
+If your skill feeds data into or reads from the Intuition knowledge graph, your `SKILL.md` should document three things:
 
 ### Execution Order
 
@@ -80,7 +80,7 @@ Agent reasoning → [your skill] → Intuition attestation    # before
 Intuition query → [your skill] → enriched result          # after
 ```
 
-### Output Contract
+### Structured JSON Output Contract
 
 Define a structured JSON output so agents (and other skills) know exactly what your skill produces. Include both success and failure shapes.
 
@@ -154,7 +154,7 @@ Optional but recommended:
 | `argument-hint` | Usage hint shown to users |
 | `allowed-tools` | Tool restrictions for the skill (see the [Agent Skills spec](https://agentskills.io/specification) for format details) |
 
-The body of SKILL.md should be written **for agents**, not humans. Be precise, explicit, and structured. Agents will follow these instructions literally.
+The body of `SKILL.md` should be written **for agents**, not humans. Be precise, explicit, and structured. Agents will follow these instructions literally.
 
 ### README.md
 
@@ -208,7 +208,7 @@ PRs are reviewed against these criteria:
 - Explicit output contracts so downstream skills know what to expect
 
 ### Agent Readability
-- SKILL.md is written for agent consumption: structured, unambiguous, no prose-heavy explanations
+- `SKILL.md` is written for agent consumption: structured, unambiguous, no prose-heavy explanations
 - Instructions are testable -- an agent following them produces correct output
 
 ### Scope
@@ -241,4 +241,4 @@ See existing tests in `scripts/` and `tests/prompts/` for format and coverage ex
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE). All skills in this repo use MIT licensing -- set `license: MIT` in your SKILL.md frontmatter.
+By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE). All skills in this repo use MIT licensing -- set `license: MIT` in your `SKILL.md` frontmatter.
