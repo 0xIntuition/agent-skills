@@ -29,11 +29,72 @@ Three schema types map to three pin mutations. Choose based on what the atom rep
 
 Select schema type from context:
 
-- If the entity is a named individual → **Person**
-- If the entity is a company, group, DAO, or protocol → **Organization**
-- Otherwise → **Thing** (default)
+- Named individual → **Person** (maps to `pinPerson`)
+- Company, group, DAO, protocol → **Organization** (maps to `pinOrganization`)
+- Software project, open-source repo → **Thing** (maps to `pinThing`; future classification: SoftwareSourceCode)
+- Predicate, concept, defined term → **Thing** (maps to `pinThing`; future classification: DefinedTerm)
+- Blockchain address → CAIP-10 path (no pin; future classification: EthereumAccount)
+- Everything else → **Thing** (default)
 
-No external classifier needed — determine the type from the user's intent or the entity's nature.
+No external classifier needed — determine the type from the user's intent or the entity's nature. The taxonomy will expand as the API evolves; agents should already think about entity types in these terms.
+
+## Data Structures Alignment
+
+The Intuition protocol is evolving toward a two-layer data architecture defined in [intuition-data-structures](https://github.com/0xIntuition/intuition-data-structures):
+
+1. **Classification (onchain identity)** — Minimal, stable identity using Schema.org vocabulary (`@context`, `@type`, `name`, disambiguators). 35 classification types.
+2. **Enrichment (offchain context)** — Provider-specific metadata (images, descriptions, social links) in a standard artifact envelope. 40+ enrichment providers.
+
+The principle: **store minimal identity onchain, attach rich metadata offchain.**
+
+**Today**: Populate all pin fields with the best data available. The current API stores everything in the IPFS pin, and that metadata is what shows up in the Portal UI.
+
+**Direction**: The protocol is moving toward separating minimal identity (classification) from rich context (enrichment). The classification taxonomy below helps you think about entity types correctly now, and prepares for API evolution.
+
+### Classification Mapping
+
+The current 3 pin types map to a broader taxonomy of 35 classification types. This table shows key classifications and how they map to the current API:
+
+| Classification | Schema.org `@type` | Current Pin Mutation | Key Identity Fields |
+|---------------|-------------------|---------------------|-------------------|
+| Person | Person | `pinPerson` | name, sameAs |
+| Company | Organization | `pinOrganization` | name, url |
+| Brand | Brand | `pinOrganization` | name, logo |
+| Local Business | LocalBusiness | `pinOrganization` | name, url |
+| Software | SoftwareSourceCode | `pinThing` | name, codeRepository |
+| Software Application | SoftwareApplication | `pinThing` | name, applicationCategory |
+| Defined Term | DefinedTerm | `pinThing` | name |
+| Product | Product | `pinThing` | name, manufacturer |
+| Service | Service | `pinThing` | name, provider |
+| Event | Event | `pinThing` | name, startDate |
+| Article | Article | `pinThing` | headline, author |
+| Book | Book | `pinThing` | name, author |
+| Movie | Movie | `pinThing` | name, director |
+| Music Recording | MusicRecording | `pinThing` | name, byArtist |
+| Podcast Series | PodcastSeries | `pinThing` | name, publisher |
+| Dataset | Dataset | `pinThing` | name |
+| Web Site | WebSite | `pinThing` | name, url |
+| Ethereum Account | EthereumAccount | CAIP-10 (no pin) | chainId, address |
+| Ethereum Smart Contract | EthereumSmartContract | CAIP-10 (no pin) | chainId, address |
+| Ethereum ERC20 | EthereumERC20 | CAIP-10 (no pin) | chainId, address |
+| Thing (default) | Thing | `pinThing` | name |
+
+Additional classification types: Place, Image, VideoObject, SocialMediaPosting, Comment, Review, AggregateRating, WebPage, MobileApplication, MusicAlbum, MusicGroup, TVSeries, PodcastEpisode, NewsArticle, JobPosting.
+
+### Field Population Guidance
+
+With the two-layer model in mind, here is how the current pin fields relate to identity vs enrichment:
+
+| Field | Layer | Guidance |
+|-------|-------|----------|
+| `name` | **Identity** | The entity's canonical name. Keep stable. This is the primary identifier. |
+| `description` | **Enrichment** | Brief supplementary context. Populate with the best available data today; this field may eventually move to the enrichment layer. |
+| `image` | **Enrichment** | A reference URL, not core identity. Populate when available; not required for identification. |
+| `url` | **Identity / Enrichment** | Canonical homepage URLs are identity (stable, disambiguating). Other URLs are context. Prefer stable canonical URLs. |
+| `email` | **Identity** | An identity disambiguator. Use only when it helps uniquely identify the entity. |
+| `identifier` | **Identity** | An identity disambiguator (Person only). Use for stable external IDs (e.g., GitHub username, ENS name). |
+
+**Practical rule**: Always populate fields with the best data you have. An atom with a good description and image is more useful in the Portal today than a minimal-identity atom. The classification model tells you how to *think* about these fields — not to leave them empty.
 
 ## Pin Mutations
 
