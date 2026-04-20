@@ -381,7 +381,7 @@ These facts govern all Intuition transactions. Reference them when encoding oper
 
 3. **curveId is required** -- `deposit` and `redeem` require a `curveId` parameter. Query `getBondingCurveConfig()` once per session. The mainnet default is `1` (linear curve).
 
-4. **Slippage parameters** -- `deposit` accepts `minShares`, `redeem` accepts `minAssets`. Use `previewDeposit`/`previewRedeem` to calculate these. Set to `0` to skip protection.
+4. **Slippage parameters** -- `deposit` accepts `minShares`, `redeem` accepts `minAssets`; `depositBatch` and `redeemBatch` take per-item `minShares[]` / `minAssets[]`. Derive bounds from `previewDeposit`/`previewRedeem` with a tolerance before executing — see the Slippage Protection section in each `operations/` doc. Zero bounds are debug-only and should not ship to production callers.
 
 5. **Receiver semantics are explicit** -- `deposit`/`redeem` operations require a non-zero receiver address. When receiver is omitted in intent, use the signer address.
 
