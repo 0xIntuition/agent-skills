@@ -8,24 +8,39 @@ Create one or more triple vaults linking existing atoms. Follow these steps in o
 
 ## Step 1: Query Prerequisites
 
-All three atoms (subject, predicate, object) must already exist. Verify each one.
+Subject, predicate, and object atoms must already exist as canonical (IPFS-pinned or CAIP-10) atoms. Plain-string atoms are legacy duplicates — do not reference them when encoding new triples. If any of the three atoms does not yet exist, pin and create it first via `reference/schemas.md` and `operations/create-atoms.md`.
 
 ```bash
-# Get the bytes32 IDs for each atom
-SUBJECT_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" $(cast --from-utf8 "Alice") --rpc-url $RPC)
-PREDICATE_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" $(cast --from-utf8 "trusts") --rpc-url $RPC)
-OBJECT_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" $(cast --from-utf8 "Bob") --rpc-url $RPC)
+# $SUBJECT_URI, $PREDICATE_URI, $OBJECT_URI come from the pin flow
+# (ipfs://bafy... for pinned atoms, caip10:eip155:... for blockchain addresses).
+SUBJECT_DATA=$(cast --from-utf8 "$SUBJECT_URI")
+PREDICATE_DATA=$(cast --from-utf8 "$PREDICATE_URI")
+OBJECT_DATA=$(cast --from-utf8 "$OBJECT_URI")
 
-# Verify all three exist (must return true)
+# Derive each atom's term ID from the exact bytes that were pinned.
+SUBJECT_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" "$SUBJECT_DATA" --rpc-url $RPC)
+PREDICATE_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" "$PREDICATE_DATA" --rpc-url $RPC)
+OBJECT_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" "$OBJECT_DATA" --rpc-url $RPC)
+
+# All three atoms must exist before the triple can be created (must return true).
 cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" $SUBJECT_ID --rpc-url $RPC
 cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" $PREDICATE_ID --rpc-url $RPC
 cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" $OBJECT_ID --rpc-url $RPC
 
-# Get per-triple creation cost (cache this)
+# Get per-triple creation cost (cache this).
 TRIPLE_COST=$(cast call $MULTIVAULT "getTripleCost()(uint256)" --rpc-url $RPC)
+
+# Compute the triple ID and preview the creation. Fees are governance-configurable;
+# always preview before executing so the caller knows expected shares and post-fee assets.
+TRIPLE_ID=$(cast call $MULTIVAULT "calculateTripleId(bytes32,bytes32,bytes32)(bytes32)" \
+  $SUBJECT_ID $PREDICATE_ID $OBJECT_ID --rpc-url $RPC)
+ASSETS_PER_TRIPLE=$TRIPLE_COST  # or $TRIPLE_COST + extra deposit in wei
+cast call $MULTIVAULT "previewTripleCreate(bytes32,uint256)(uint256,uint256,uint256)" \
+  $TRIPLE_ID $ASSETS_PER_TRIPLE --rpc-url $RPC
+# Returns (expectedShares, assetsAfterFixedFees, assetsAfterFees)
 ```
 
-If any atom doesn't exist, create it first using `operations/create-atoms.md`.
+If any of the three atoms doesn't exist, create it first using `operations/create-atoms.md` (which pins via `reference/schemas.md`). Do not substitute plain-string atoms — those are legacy duplicates, not canonical entries. If the triple itself already exists, skip creation; a duplicate creation reverts with `MultiVault_TripleExists`.
 
 ## Step 2: Encode the Calldata
 
@@ -39,6 +54,28 @@ CALLDATA=$(cast calldata "createTriples(bytes32[],bytes32[],bytes32[],uint256[])
 ### Using viem
 
 ```typescript
+// subjectIds, predicateIds, objectIds are bytes32 IDs derived from pinned atoms
+// (via `calculateAtomId` on the hex-encoded IPFS or CAIP-10 URI).
+// Each `assets[i]` must be >= tripleCost.
+
+// Preview each triple creation before encoding — fees are governance-configurable.
+const tripleIds = await Promise.all(subjectIds.map((_, i) =>
+  client.readContract({
+    address: MULTIVAULT, abi: readAbi,
+    functionName: 'calculateTripleId',
+    args: [subjectIds[i], predicateIds[i], objectIds[i]],
+  })
+))
+const previews = await Promise.all(tripleIds.map((tripleId, i) =>
+  client.readContract({
+    address: MULTIVAULT, abi: readAbi,
+    functionName: 'previewTripleCreate',
+    args: [tripleId, assets[i]],
+  })
+))
+// Each preview returns [shares, assetsAfterFixedFees, assetsAfterFees].
+// Stop and do not encode if any preview reverts or returns zero shares.
+
 const data = encodeFunctionData({
   abi: parseAbi(['function createTriples(bytes32[] subjectIds, bytes32[] predicateIds, bytes32[] objectIds, uint256[] assets) payable returns (bytes32[])']),
   functionName: 'createTriples',
@@ -76,6 +113,8 @@ Set `to` to `$MULTIVAULT`, `value` to the Step 3 result, and `chainId` to `$CHAI
 
 ## Important
 
+- Subject, predicate, and object must be canonical atoms — IPFS-pinned (type `Thing`) or CAIP-10 addresses. Plain-string atoms are legacy duplicates with negligible usage; do not reference them here. If an atom is not yet canonical, pin and create it first via `reference/schemas.md` and `operations/create-atoms.md`.
+- Always call `previewTripleCreate(tripleId, assets[i])` before executing. Fees are governance-configurable and may shift between sessions; the preview is the only reliable way to size expected shares and post-fee assets.
 - All four arrays (subjectIds, predicateIds, objectIds, assets) must be the same length.
 - Every triple automatically creates a **counter-triple** vault. Deposit into the counter-triple to signal disagreement.
 - Use `getCounterIdFromTripleId(tripleId)` to get the counter-triple's ID for disagreement signaling.

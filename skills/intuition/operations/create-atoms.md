@@ -41,15 +41,23 @@ Run these queries before encoding. Use values from session setup if already cach
 # Get per-atom creation cost (cache this)
 ATOM_COST=$(cast call $MULTIVAULT "getAtomCost()(uint256)" --rpc-url $RPC)
 
-# Optional: check if atom already exists (skip creation if true)
-# Use the exact atom data you will send to createAtoms.
-# $URI is the IPFS URI from the pin flow, or a CAIP-10 URI for addresses
+# Compute the atom ID from the exact bytes you will send to createAtoms.
+# $URI is the IPFS URI from the pin flow, or a CAIP-10 URI for addresses.
 ATOM_DATA=$(cast --from-utf8 "$URI")
 ATOM_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" "$ATOM_DATA" --rpc-url $RPC)
+
+# Check if the atom already exists (skip creation if true).
 EXISTS=$(cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" $ATOM_ID --rpc-url $RPC)
+
+# Preview the creation. Fees are governance-configurable; always preview
+# before executing so the caller knows expected shares and post-fee assets.
+ASSETS_PER_ATOM=$ATOM_COST  # or $ATOM_COST + extra deposit in wei
+cast call $MULTIVAULT "previewAtomCreate(bytes32,uint256)(uint256,uint256,uint256)" \
+  $ATOM_ID $ASSETS_PER_ATOM --rpc-url $RPC
+# Returns (expectedShares, assetsAfterFixedFees, assetsAfterFees)
 ```
 
-If the atom already exists, skip creation and use the existing `ATOM_ID`.
+If the atom already exists, skip creation and use the existing `ATOM_ID`. If the preview reverts or returns zero shares for a non-zero `assets` input, stop and do not emit the transaction — the fee config or input is unexpected.
 
 ## Step 2: Encode the Calldata
 
@@ -77,6 +85,22 @@ const uris = ['ipfs://bafy...a', 'ipfs://bafy...b', 'ipfs://bafy...c']
 const atomDatas = uris.map(u => stringToHex(u))
 
 const assets = [atomCost, atomCost, atomCost] // each element must be >= atomCost
+
+// Preview each creation before encoding — fees are governance-configurable.
+const atomIds = await Promise.all(atomDatas.map(atomData =>
+  client.readContract({
+    address: MULTIVAULT, abi: readAbi,
+    functionName: 'calculateAtomId', args: [atomData],
+  })
+))
+const previews = await Promise.all(atomIds.map((atomId, i) =>
+  client.readContract({
+    address: MULTIVAULT, abi: readAbi,
+    functionName: 'previewAtomCreate', args: [atomId, assets[i]],
+  })
+))
+// Each preview returns [shares, assetsAfterFixedFees, assetsAfterFees].
+// Stop and do not encode if any preview reverts or returns zero shares.
 
 const data = encodeFunctionData({
   abi: parseAbi(['function createAtoms(bytes[] atomDatas, uint256[] assets) payable returns (bytes32[])']),
@@ -137,5 +161,6 @@ See `reference/schemas.md` → Batch Pinning for the full pattern.
 ## Important
 
 - Atom IDs are deterministic. Creating an atom that already exists reverts with `MultiVault_AtomExists`. Always check existence with `calculateAtomId` + `isTermCreated` before creating.
+- Always call `previewAtomCreate(atomId, assets[i])` before executing. Fees are governance-configurable and may shift between sessions; the preview is the only reliable way to size expected shares and post-fee assets.
 - The function returns `bytes32[]` — the atom IDs for each created atom.
 - For batch creation, `atomDatas` and `assets` arrays must be the same length.
