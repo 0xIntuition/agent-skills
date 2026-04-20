@@ -30,11 +30,12 @@ cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" $OBJECT_ID --rpc-url $RPC
 # Get per-triple creation cost (cache this).
 TRIPLE_COST=$(cast call $MULTIVAULT "getTripleCost()(uint256)" --rpc-url $RPC)
 
-# Compute the triple ID and preview the creation. Fees are governance-configurable;
-# always preview before executing so the caller knows expected shares and post-fee assets.
+# Compute the triple ID and preview the creation using the exact assets value
+# you will encode. Fees are governance-configurable; always preview before
+# executing so the caller knows expected shares and post-fee assets.
 TRIPLE_ID=$(cast call $MULTIVAULT "calculateTripleId(bytes32,bytes32,bytes32)(bytes32)" \
   $SUBJECT_ID $PREDICATE_ID $OBJECT_ID --rpc-url $RPC)
-ASSETS_PER_TRIPLE=$TRIPLE_COST  # or $TRIPLE_COST + extra deposit in wei
+ASSETS_PER_TRIPLE=$TRIPLE_COST  # cost-only creation; add extra wei for an initial deposit
 cast call $MULTIVAULT "previewTripleCreate(bytes32,uint256)(uint256,uint256,uint256)" \
   $TRIPLE_ID $ASSETS_PER_TRIPLE --rpc-url $RPC
 # Returns (expectedShares, assetsAfterFixedFees, assetsAfterFees)
@@ -47,8 +48,9 @@ If any of the three atoms doesn't exist, create it first using `operations/creat
 ### Using cast
 
 ```bash
+# Use the same assets value previewed in Step 1.
 CALLDATA=$(cast calldata "createTriples(bytes32[],bytes32[],bytes32[],uint256[])" \
-  "[$SUBJECT_ID]" "[$PREDICATE_ID]" "[$OBJECT_ID]" "[$TRIPLE_COST]")
+  "[$SUBJECT_ID]" "[$PREDICATE_ID]" "[$OBJECT_ID]" "[$ASSETS_PER_TRIPLE]")
 ```
 
 ### Using viem
@@ -74,7 +76,13 @@ const previews = await Promise.all(tripleIds.map((tripleId, i) =>
   })
 ))
 // Each preview returns [shares, assetsAfterFixedFees, assetsAfterFees].
-// Stop and do not encode if any preview reverts or returns zero shares.
+// Stop if any preview reverts. Zero shares are expected for cost-only creation;
+// stop only when a non-zero initial deposit would still mint zero user shares.
+for (const [i, [shares, assetsAfterFixedFees]] of previews.entries()) {
+  if (assetsAfterFixedFees > 0n && shares === 0n) {
+    throw new Error(`Triple creation preview ${i} mints zero shares from a non-zero initial deposit`)
+  }
+}
 
 const data = encodeFunctionData({
   abi: parseAbi(['function createTriples(bytes32[] subjectIds, bytes32[] predicateIds, bytes32[] objectIds, uint256[] assets) payable returns (bytes32[])']),
@@ -92,8 +100,8 @@ msg.value = sum(assets[])
 Each `assets[i]` is the full per-item payment and must be >= `tripleCost`. The creation cost is deducted from each element; the remainder becomes the initial vault deposit (subject to fees).
 
 ```bash
-# Single triple, no extra deposit
-VALUE=$TRIPLE_COST  # assets=[$TRIPLE_COST]
+# Single triple, using the same assets value previewed and encoded above
+VALUE=$ASSETS_PER_TRIPLE  # assets=[$ASSETS_PER_TRIPLE]
 ```
 
 ## Step 4: Output the Unsigned Transaction JSON

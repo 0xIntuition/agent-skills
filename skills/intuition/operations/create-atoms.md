@@ -49,15 +49,16 @@ ATOM_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" "$ATOM_DATA" -
 # Check if the atom already exists (skip creation if true).
 EXISTS=$(cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" $ATOM_ID --rpc-url $RPC)
 
-# Preview the creation. Fees are governance-configurable; always preview
-# before executing so the caller knows expected shares and post-fee assets.
-ASSETS_PER_ATOM=$ATOM_COST  # or $ATOM_COST + extra deposit in wei
+# Preview the creation using the exact assets value you will encode.
+# Fees are governance-configurable; always preview before executing so the
+# caller knows expected shares and post-fee assets.
+ASSETS_PER_ATOM=$ATOM_COST  # cost-only creation; add extra wei for an initial deposit
 cast call $MULTIVAULT "previewAtomCreate(bytes32,uint256)(uint256,uint256,uint256)" \
   $ATOM_ID $ASSETS_PER_ATOM --rpc-url $RPC
 # Returns (expectedShares, assetsAfterFixedFees, assetsAfterFees)
 ```
 
-If the atom already exists, skip creation and use the existing `ATOM_ID`. If the preview reverts or returns zero shares for a non-zero `assets` input, stop and do not emit the transaction — the fee config or input is unexpected.
+If the atom already exists, skip creation and use the existing `ATOM_ID`. If the preview reverts, stop and do not emit the transaction. Zero user shares are expected for cost-only creation (`assetsAfterFixedFees = 0`); if `assetsAfterFixedFees > 0` and `expectedShares = 0`, stop because the fee config or input would consume the intended initial deposit.
 
 ## Step 2: Encode the Calldata
 
@@ -66,10 +67,11 @@ Encode each URI as hex bytes, then build the calldata.
 ### Using cast
 
 ```bash
-# $URI = "ipfs://bafy..." (from pin flow) or "caip10:eip155:1:0x..." (address)
+# $URI = "ipfs://bafy..." (from pin flow) or "caip10:eip155:1:0x..." (address).
+# Use the same assets value previewed in Step 1.
 ATOM_DATA=$(cast --from-utf8 "$URI")
 
-CALLDATA=$(cast calldata "createAtoms(bytes[],uint256[])" "[$ATOM_DATA]" "[$ATOM_COST]")
+CALLDATA=$(cast calldata "createAtoms(bytes[],uint256[])" "[$ATOM_DATA]" "[$ASSETS_PER_ATOM]")
 ```
 
 ### Using viem
@@ -100,7 +102,13 @@ const previews = await Promise.all(atomIds.map((atomId, i) =>
   })
 ))
 // Each preview returns [shares, assetsAfterFixedFees, assetsAfterFees].
-// Stop and do not encode if any preview reverts or returns zero shares.
+// Stop if any preview reverts. Zero shares are expected for cost-only creation;
+// stop only when a non-zero initial deposit would still mint zero user shares.
+for (const [i, [shares, assetsAfterFixedFees]] of previews.entries()) {
+  if (assetsAfterFixedFees > 0n && shares === 0n) {
+    throw new Error(`Atom creation preview ${i} mints zero shares from a non-zero initial deposit`)
+  }
+}
 
 const data = encodeFunctionData({
   abi: parseAbi(['function createAtoms(bytes[] atomDatas, uint256[] assets) payable returns (bytes32[])']),
@@ -118,8 +126,8 @@ msg.value = sum(assets[])
 Each `assets[i]` is the full per-item payment and must be >= `atomCost`. The creation cost is deducted from each element; the remainder becomes the initial vault deposit (subject to fees).
 
 ```bash
-# Single atom, no extra deposit
-VALUE=$ATOM_COST  # assets=[$ATOM_COST]
+# Single atom, using the same assets value previewed and encoded above
+VALUE=$ASSETS_PER_ATOM  # assets=[$ASSETS_PER_ATOM]
 
 # Three atoms, no extra deposit
 VALUE=$((ATOM_COST * 3))  # assets=[$ATOM_COST, $ATOM_COST, $ATOM_COST]
