@@ -82,3 +82,13 @@ Set `to` to `$MULTIVAULT`, `value` to the Step 3 result, and `chainId` to `$CHAI
 - Each `curveIds` element can differ, but typically they're all the same `defaultCurveId`.
 - Total `msg.value` must equal the sum of the `assets` array exactly.
 - When receiver differs from sender, the receiver must first call `approve(senderAddress, 1)` (1 = DEPOSIT). Enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH.
+
+## Post-Broadcast Verification
+
+After the wallet layer broadcasts the tx, verify per `reference/post-write-verification.md`. For each `termIds[i]`:
+
+- Receipt `status = success`.
+- `getShares(receiver, termIds[i], curveIds[i])` delta satisfies `delta >= minShares[i]`.
+- One `Deposited` event is emitted per term for event-driven consumers.
+
+A non-reverting batch can still land against unexpected state on a subset of terms — iterate every term ID, do not rely on batch-level receipt alone.

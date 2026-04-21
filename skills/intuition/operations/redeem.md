@@ -96,3 +96,12 @@ const minAssets = expectedAssets * 95n / 100n
 - Use `maxRedeem(address, termId, curveId)` to get the maximum redeemable shares.
 - Exit fees apply. Always preview before executing.
 - When the caller redeems on behalf of another account, the share owner must first call `approve(callerAddress, 2)` (2 = REDEMPTION). Enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH.
+
+## Post-Broadcast Verification
+
+After the wallet layer broadcasts the tx, verify per `reference/post-write-verification.md`:
+
+- Receipt `status = success`.
+- `getShares(sender, termId, curveId)` delta equals the `shares` argument (burned amount).
+- Assets received to `receiver` satisfy `assetsReceived >= minAssets`; decode the `Redeemed` event for the exact `assets` value.
+- Event `Redeemed(sender, receiver, termId, curveId, shares, totalShares, assets, fees, vaultType)` is emitted.

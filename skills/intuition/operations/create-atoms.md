@@ -139,3 +139,12 @@ See `reference/schemas.md` → Batch Pinning for the full pattern.
 - Atom IDs are deterministic. Creating an atom that already exists reverts with `MultiVault_AtomExists`. Always check existence with `calculateAtomId` + `isTermCreated` before creating.
 - The function returns `bytes32[]` — the atom IDs for each created atom.
 - For batch creation, `atomDatas` and `assets` arrays must be the same length.
+
+## Post-Broadcast Verification
+
+After the wallet layer broadcasts the tx, verify per `reference/post-write-verification.md`:
+
+- Receipt `status = success`.
+- Each pre-computed `ATOM_ID` returns `true` for `isTermCreated` — the created IDs match the caller's expected `bytes32[]` without parsing logs.
+- If a non-zero initial deposit was included, `getShares(creator, atomId, curveId)` reflects it.
+- Event `AtomCreated(creator, termId, atomData, atomWallet)` is emitted for event-driven consumers (optional; on-chain reads are authoritative).

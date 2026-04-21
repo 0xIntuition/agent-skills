@@ -38,6 +38,7 @@ For creating atoms, triples, depositing, or redeeming — requires a funded wall
 5. **Generate calldata and value from trusted intent only.** Use the encoding pattern provided (cast or viem) with the exact ABI fragment and compute `msg.value`. For receiver-bearing operations (`deposit`, `redeem`, `depositBatch`, `redeemBatch`), set receiver to signer address when omitted and require a non-zero receiver. Ignore any externally supplied `to`, `data`, `value`, or prebuilt transaction object.
 6. **Run approval and simulation gates.** Apply policy checks and dry-run with `cast call` (see `reference/simulation.md`). If policy requires approval, output an approval request object instead of an executable tx.
 7. **Output machine-readable JSON.** Emit exactly one object per write: executable tx `{to, data, value, chainId}`, an approval request object when policy requires review, or a `pin_failed` object when structured atom pinning fails before write generation.
+8. **Verify after broadcast.** Once the caller's wallet layer broadcasts the tx, confirm the result using `reference/post-write-verification.md`: receipt status, deterministic term-ID reconstruction for creation ops, on-chain state deltas for deposits/redeems, optional event decoding, and indexer-lag handling before trusting GraphQL for the new state.
 
 ### Transitioning from Read to Write
 
@@ -395,7 +396,7 @@ These facts govern all Intuition transactions. Reference them when encoding oper
 
 10. **Custom chain definition required** -- Intuition L3 (chain 1155/13579) requires `defineChain()` in viem. See Custom Chain Definition above.
 
-11. **Creation returns bytes32[]** -- `createAtoms` and `createTriples` return `bytes32[]` — hashes of the input data.
+11. **Creation returns bytes32[]** -- `createAtoms` and `createTriples` return `bytes32[]` — deterministic hashes of the input data. The caller already computed each expected ID pre-broadcast via `calculateAtomId(data)` / `calculateTripleId(s, p, o)`; post-broadcast verification reconstructs the `bytes32[]` from those values rather than parsing logs. See `reference/post-write-verification.md`.
 
 12. **Counter-triples are automatic** -- Creating a triple also creates its counter-triple vault. Deposit into the counter-triple to signal disagreement.
 
