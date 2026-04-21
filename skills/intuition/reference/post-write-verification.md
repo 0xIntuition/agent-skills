@@ -69,7 +69,9 @@ Confirm the write produced the expected vault state. Run these against the block
 # The term exists.
 cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" $TERM_ID --rpc-url $RPC
 
-# Vault exists and has the expected initial shares/assets (zero if cost-only creation).
+# Vault exists and has the expected initialized totals.
+# Cost-only creation yields zero user shares, but the vault itself is seeded
+# with the minimum share/assets state.
 cast call $MULTIVAULT "getVault(bytes32,uint256)(uint256,uint256)" $TERM_ID $CURVE_ID --rpc-url $RPC
 
 # If a non-zero initial deposit was included, the creator now holds shares.
@@ -123,9 +125,9 @@ done
 
 ## Step 4: Event Inspection (Optional)
 
-The MultiVault emits one event per logical action. Event decoding is useful for event-driven consumers (indexers, webhooks) but is not required for on-chain verification — the state reads in Step 3 are authoritative.
+Write paths often emit multiple events for the same logical action. Event decoding is useful for event-driven consumers (indexers, webhooks) but is not required for on-chain verification — the state reads in Step 3 are authoritative.
 
-Event signatures (from `IMultiVault.sol`):
+Primary event signatures (from `IMultiVault.sol`):
 
 | Event | Signature |
 |---|---|
@@ -136,6 +138,13 @@ Event signatures (from `IMultiVault.sol`):
 | `SharePriceChanged` | `SharePriceChanged(bytes32 indexed termId, uint256 indexed curveId, uint256 sharePrice, uint256 totalAssets, uint256 totalShares, VaultType vaultType)` |
 
 `VaultType` is `enum { ATOM, TRIPLE, COUNTER_TRIPLE }` (uint8: 0 / 1 / 2).
+
+Typical receipts include more than one event:
+
+- `createAtoms` emits `AtomCreated`, `Deposited`, and `SharePriceChanged`.
+- `createTriples` emits `TripleCreated`, `Deposited`, and `SharePriceChanged`.
+- `deposit` / `depositBatch` emit `Deposited` and `SharePriceChanged` per affected vault, plus fee events when applicable.
+- `redeem` / `redeemBatch` emit `Redeemed` and `SharePriceChanged` per affected vault, plus fee events when applicable.
 
 ### Decoding with cast
 
@@ -148,6 +157,7 @@ cast keccak "AtomCreated(address,bytes32,bytes,address)"
 cast keccak "TripleCreated(address,bytes32,bytes32,bytes32,bytes32)"
 cast keccak "Deposited(address,address,bytes32,uint256,uint256,uint256,uint256,uint256,uint8)"
 cast keccak "Redeemed(address,address,bytes32,uint256,uint256,uint256,uint256,uint256,uint8)"
+cast keccak "SharePriceChanged(bytes32,uint256,uint256,uint256,uint256,uint8)"
 ```
 
 ### Decoding with viem
@@ -161,6 +171,7 @@ const createdEvents = parseEventLogs({
     'event TripleCreated(address indexed creator, bytes32 indexed termId, bytes32 subjectId, bytes32 predicateId, bytes32 objectId)',
     'event Deposited(address indexed sender, address indexed receiver, bytes32 indexed termId, uint256 curveId, uint256 assets, uint256 assetsAfterFees, uint256 shares, uint256 totalShares, uint8 vaultType)',
     'event Redeemed(address indexed sender, address indexed receiver, bytes32 indexed termId, uint256 curveId, uint256 shares, uint256 totalShares, uint256 assets, uint256 fees, uint8 vaultType)',
+    'event SharePriceChanged(bytes32 indexed termId, uint256 indexed curveId, uint256 sharePrice, uint256 totalAssets, uint256 totalShares, uint8 vaultType)',
   ]),
   logs: receipt.logs,
 })
