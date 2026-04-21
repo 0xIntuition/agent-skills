@@ -125,6 +125,7 @@ operations/                       (Path B: writes — run session setup first)
   redeem.md                       Redeem shares from a vault, receive $TRUST
   batch-deposit.md                Deposit into multiple vaults in one transaction
   batch-redeem.md                 Redeem from multiple vaults in one transaction
+  approve.md                      Grant/revoke deposit or redemption approval for delegated flows
 ```
 
 ## Protocol Model
@@ -366,6 +367,7 @@ To perform a write, open the corresponding operation file and follow its steps e
 | Redeem shares from a vault | `operations/redeem.md` | No — `value = 0` |
 | Deposit into multiple vaults | `operations/batch-deposit.md` | Yes — `msg.value = sum(assets)` |
 | Redeem from multiple vaults | `operations/batch-redeem.md` | No — `value = 0` |
+| Delegate deposit/redemption (receiver ≠ sender) | `operations/approve.md` | No — `value = 0` |
 
 For on-chain reads (costs, existence, vault state, previews), follow `reference/reading-state.md`.
 For discovery reads (search, browse, traverse the knowledge graph), follow `reference/graphql-queries.md`.

@@ -114,7 +114,7 @@ Tolerance (5% here) is an example — pick per deployment based on expected exit
 - Redeem is non-payable. Value must be 0.
 - All arrays (termIds, curveIds, shares, minAssets) must be the same length.
 - Exit fees apply to each redemption. Always preview each item and derive `minAssets[]` with a tolerance before executing — see Slippage Protection.
-- When the caller redeems on behalf of another account, the share owner must first call `approve(callerAddress, 2)` (2 = REDEMPTION). Enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH.
+- When the caller redeems on behalf of another account, the share owner must first grant the caller `REDEMPTION` approval via `operations/approve.md` (`approve(callerAddress, 2)`; enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH). One approval covers every `termId` in the batch, but that approval tx must mine before this batch redeem broadcasts.
 
 ## Post-Broadcast Verification
 
