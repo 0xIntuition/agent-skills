@@ -53,6 +53,17 @@ Testing is documented in [TESTING.md](TESTING.md), including:
 - Layer A.5 edge-case RPC checks (`scripts/pass2-edge-case-tests.sh`)
 - Layer B prompt suites for autonomous consumption and on-chain integration (`tests/prompts/`)
 
+## Releases
+
+Published users should treat `main` as a moving branch, not a stable channel.
+
+- Pin production installs to a Git tag or commit SHA.
+- `metadata.version` in [`skills/intuition/SKILL.md`](skills/intuition/SKILL.md) is
+  updated only in a release PR, not in ordinary fix branches.
+- Release policy, semantic versioning rules, and the publish checklist live in
+  [RELEASING.md](RELEASING.md).
+- User-visible release notes live in [CHANGELOG.md](CHANGELOG.md).
+
 ## References
 
 - [Intuition Protocol](https://intuition.systems)
