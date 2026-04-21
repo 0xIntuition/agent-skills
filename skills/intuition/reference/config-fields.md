@@ -33,9 +33,9 @@ struct GeneralConfig {
 
 ### Safety-critical
 
-- **`minDeposit`** — Every deposit (single, batch, and the per-item deposit baked into `createAtoms` / `createTriples`) must send `>= minDeposit` assets. Below that, the tx reverts with `MultiVault_DepositBelowMinimumDeposit`. Check the caller's requested amount against this before building calldata.
+- **`minDeposit`** — Every direct deposit (`deposit`, `depositBatch`) must send `>= minDeposit` assets. Below that, the tx reverts with `MultiVault_DepositBelowMinimumDeposit`. Check the caller's requested amount against this before building calldata. This does **not** apply to `createAtoms` / `createTriples`; create paths are bounded by `getAtomCost()` / `getTripleCost()` instead.
 - **`atomDataMaxLength`** — Maximum length in bytes of the `data` passed to `createAtoms`. Exceeding it reverts with `MultiVault_AtomDataTooLong`. Applies to the hex-encoded atom URI, not the pre-encoded string. Always pin structured payloads so the on-chain bytes stay short (an IPFS URI is ~60 bytes).
-- **`feeThreshold`** — Entry/exit fees on a term's vault only apply once `totalShares` in that term's **default curve vault** reaches `feeThreshold`. Below the threshold, entry/exit fees return zero from `entryFeeAmount` / `exitFeeAmount` and `previewDeposit` / `previewRedeem` reflect that. Relevant when interpreting why a preview returned no fee on a low-activity vault — previews are still authoritative, this just explains the shape.
+- **`feeThreshold`** — Entry/exit fees on a term's vault only apply once `totalShares` in that term's **default curve vault** reaches `feeThreshold`. Below the threshold, `previewDeposit` / `previewRedeem` and the actual execution paths charge zero entry/exit fees on that vault. The public `entryFeeAmount` / `exitFeeAmount` helpers are raw fee calculators and do **not** apply this threshold gate. Relevant when interpreting why a preview returned no fee on a low-activity vault — previews are still authoritative, this just explains the shape.
 - **`feeDenominator`** — All fee percentages are stored as numerators against this denominator (`amount.mulDivUp(fee, feeDenominator)`). Required only if you need to convert a raw fee value (e.g., `vaultFees.entryFee = 500`) into a percentage (`500 / feeDenominator`). Agents usually do not need this — previews already return absolute values.
 
 ### Informational
@@ -83,11 +83,11 @@ struct VaultFees {
 
 All three informational; `previewDeposit` / `previewRedeem` / `previewAtomCreate` / `previewTripleCreate` already incorporate them. Semantics matter when interpreting `Deposited` / `Redeemed` events.
 
-- **`entryFee`** — Charged on deposits. Stays in the vault as assets (benefits existing shareholders rather than minting new shares for the depositor). Gated by the `feeThreshold` rule above: entry fee is zero when the default curve vault's `totalShares < feeThreshold`.
-- **`exitFee`** — Charged on redemptions. Stays in the vault as assets. Gated by the same threshold rule, evaluated against shares **remaining** after the redemption; fully draining a vault skips exit fees.
+- **`entryFee`** — Charged on deposits. Stays in the vault as assets (benefits existing shareholders rather than minting new shares for the depositor). Gated by the `feeThreshold` rule above: the charged entry fee is zero when the default curve vault's `totalShares < feeThreshold`.
+- **`exitFee`** — Charged on redemptions. Stays in the vault as assets. Gated by the same threshold rule, evaluated against shares **remaining** after the redemption; fully draining a vault skips charged exit fees.
 - **`protocolFee`** — Charged on both deposits and redemptions. Sent to `protocolMultisig`. Not gated by `feeThreshold`.
 
-All three fees are stored as numerators against `generalConfig.feeDenominator`. Do not derive absolute amounts from these fields yourself — call `protocolFeeAmount` / `entryFeeAmount` / `exitFeeAmount`, or read the preview output.
+All three fees are stored as numerators against `generalConfig.feeDenominator`. Do not derive actual charged amounts from these fields yourself — the preview output is the authoritative threshold-aware result. The public fee helpers (`protocolFeeAmount` / `entryFeeAmount` / `exitFeeAmount`) are raw calculators against an input amount.
 
 ## BondingCurveConfig
 
@@ -107,7 +107,7 @@ Safety-critical fields map directly to revert errors. Check these client-side be
 
 | Field | Revert | Affected ops |
 |---|---|---|
-| `minDeposit` | `MultiVault_DepositBelowMinimumDeposit` | `deposit`, `depositBatch`, `createAtoms`, `createTriples` |
+| `minDeposit` | `MultiVault_DepositBelowMinimumDeposit` | `deposit`, `depositBatch` |
 | `atomDataMaxLength` | `MultiVault_AtomDataTooLong` | `createAtoms` |
 | `defaultCurveId` (missing/invalid curve) | Curve-registry revert | `deposit`, `redeem`, `depositBatch`, `redeemBatch` |
 
