@@ -28,8 +28,11 @@ cast call $MULTIVAULT "previewDeposit(bytes32,uint256,uint256)(uint256,uint256)"
 ```bash
 SENDER=0x<signer>
 RECEIVER=${RECEIVER:-$SENDER}
+# Derive <minShares1>, <minShares2> from per-item previewDeposit calls with a
+# tolerance — see Slippage Protection below. Do NOT default to [0,0] outside
+# of isolated debug runs.
 CALLDATA=$(cast calldata "depositBatch(address,bytes32[],uint256[],uint256[],uint256[])" \
-  $RECEIVER "[0x<termId1>,0x<termId2>]" "[$CURVE_ID,$CURVE_ID]" "[1000000000000000,2000000000000000]" "[0,0]")
+  $RECEIVER "[0x<termId1>,0x<termId2>]" "[$CURVE_ID,$CURVE_ID]" "[1000000000000000,2000000000000000]" "[<minShares1>,<minShares2>]")
 ```
 
 ### Using viem
@@ -38,6 +41,9 @@ CALLDATA=$(cast calldata "depositBatch(address,bytes32[],uint256[],uint256[],uin
 // Default receiver to signer when not explicitly provided.
 const receiver = providedReceiver ?? account.address
 
+// `minShares` MUST be derived per-item from previewDeposit with a tolerance —
+// see Slippage Protection below. A zero-filled array provides no protection
+// on any item in the batch.
 const data = encodeFunctionData({
   abi: parseAbi(['function depositBatch(address receiver, bytes32[] termIds, uint256[] curveIds, uint256[] assets, uint256[] minShares) payable returns (uint256[])']),
   functionName: 'depositBatch',
@@ -74,6 +80,42 @@ Output one unsigned transaction object with resolved values from this session:
 
 Set `to` to `$MULTIVAULT`, `value` to the Step 3 result, and `chainId` to `$CHAIN_ID`.
 
+## Slippage Protection
+
+Batch deposits have per-item slippage risk: each `minShares[i]` bounds only the `i`-th vault in the batch. A zero-filled `minShares` accepts any output — including zero — on every item, which is unsafe in production.
+
+Always derive per-item bounds from `previewDeposit` with a tolerance:
+
+```bash
+# Preview each vault separately — curves and state differ per term.
+EXPECTED_1=$(cast call $MULTIVAULT "previewDeposit(bytes32,uint256,uint256)(uint256,uint256)" \
+  0x<termId1> $CURVE_ID 1000000000000000 --rpc-url $RPC | awk 'NR == 1 { print $1 }')
+EXPECTED_2=$(cast call $MULTIVAULT "previewDeposit(bytes32,uint256,uint256)(uint256,uint256)" \
+  0x<termId2> $CURVE_ID 2000000000000000 --rpc-url $RPC | awk 'NR == 1 { print $1 }')
+
+# 5% slippage tolerance per item.
+# Use bc for uint256-sized integer arithmetic; shell arithmetic can overflow.
+MIN_1=$(printf '%s * 95 / 100\n' "$EXPECTED_1" | bc)
+MIN_2=$(printf '%s * 95 / 100\n' "$EXPECTED_2" | bc)
+# Use "[$MIN_1,$MIN_2]" as the minShares[] argument.
+```
+
+```typescript
+const previews = await Promise.all(termIds.map((termId, i) =>
+  client.readContract({
+    address: MULTIVAULT, abi: readAbi,
+    functionName: 'previewDeposit',
+    args: [termId, curveIds[i], assets[i]],
+  })
+))
+// 5% slippage tolerance per item.
+const minShares = previews.map(([expectedShares]) => expectedShares * 95n / 100n)
+```
+
+Tolerance (5% here) is an example — pick per deployment based on expected fee variance and indexer staleness. Fees are governance-configurable and can shift between preview and execution.
+
+**Debug-only exception:** `minShares: [0, 0, ...]` is acceptable when intentionally exercising the batch path in isolated test runs where loss of funds is not a concern. Do not ship this pattern to production callers or reuse it in copy-paste templates.
+
 ## Important
 
 - Receiver defaults to the signer address when not explicitly provided.
@@ -81,4 +123,5 @@ Set `to` to `$MULTIVAULT`, `value` to the Step 3 result, and `chainId` to `$CHAI
 - All arrays (termIds, curveIds, assets, minShares) must be the same length.
 - Each `curveIds` element can differ, but typically they're all the same `defaultCurveId`.
 - Total `msg.value` must equal the sum of the `assets` array exactly.
+- Always preview each item and derive `minShares[]` with a tolerance before executing — see Slippage Protection.
 - When receiver differs from sender, the receiver must first call `approve(senderAddress, 1)` (1 = DEPOSIT). Enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH.
