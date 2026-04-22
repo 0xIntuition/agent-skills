@@ -98,7 +98,7 @@ const minShares = expectedShares * 95n / 100n
 - Receiver is always a non-zero EVM address.
 - The `curveId` must match a configured bonding curve. Query `getBondingCurveConfig()` once per session — the mainnet default is `1`.
 - To signal disagreement on a triple, deposit into the counter-triple instead: get its ID via `getCounterIdFromTripleId(tripleId)`.
-- The receiver address is who gets the shares — this can differ from the sender. When receiver differs from sender, the receiver must first call `approve(senderAddress, 1)` (1 = DEPOSIT). Enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH.
+- The receiver address is who gets the shares — this can differ from the sender. When receiver differs from sender, the receiver must first grant the sender `DEPOSIT` approval via `operations/approve.md` (`approve(senderAddress, 1)`; enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH). That approval tx must mine before this deposit broadcasts.
 
 ## Post-Broadcast Verification
 

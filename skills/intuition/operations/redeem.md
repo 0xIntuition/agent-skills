@@ -95,7 +95,7 @@ const minAssets = expectedAssets * 95n / 100n
 - Redeem is non-payable. Value must be 0.
 - Use `maxRedeem(address, termId, curveId)` to get the maximum redeemable shares.
 - Exit fees apply. Always preview before executing.
-- When the caller redeems on behalf of another account, the share owner must first call `approve(callerAddress, 2)` (2 = REDEMPTION). Enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH.
+- When the caller redeems on behalf of another account, the share owner must first grant the caller `REDEMPTION` approval via `operations/approve.md` (`approve(callerAddress, 2)`; enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH). That approval tx must mine before this redeem broadcasts.
 
 ## Post-Broadcast Verification
 
