@@ -109,11 +109,8 @@ Tolerance (5% here) is an example — pick per deployment based on expected exit
 
 ## Important
 
-- Receiver defaults to the signer address when not explicitly provided.
-- Receiver is always a non-zero EVM address.
-- Redeem is non-payable. Value must be 0.
-- All arrays (termIds, curveIds, shares, minAssets) must be the same length.
-- Exit fees apply to each redemption. Always preview each item and derive `minAssets[]` with a tolerance before executing — see Slippage Protection.
+- For receiver defaults, non-payable semantics, and the output contract, see [Protocol Invariants](../SKILL.md#protocol-invariants).
+- All arrays must stay index-aligned and the same length. Derive every `minAssets[i]` from `previewRedeem` with a tolerance before building calldata; a zero-filled `minAssets[]` is debug-only.
 - When the caller redeems on behalf of another account, the share owner must first grant the caller `REDEMPTION` approval via `operations/approve.md` (`approve(callerAddress, 2)`; enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH). One approval covers every `termId` in the batch, but that approval tx must mine before this batch redeem broadcasts.
 
 ## Post-Broadcast Verification
