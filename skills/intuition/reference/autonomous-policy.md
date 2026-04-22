@@ -53,14 +53,17 @@ Disabling claim policy does not disable execution safety gates. These remain man
 
 ## Suggested Policy Schema
 
+Use the chain IDs and MultiVault addresses from `reference/network-config.md`
+when populating the network allowlist.
+
 ```json
 {
   "mode": "strict",
   "allow": {
     "chains": [1155, 13579],
     "multivaultByChain": {
-      "1155": "0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e",
-      "13579": "0x2Ece8D4dEdcB9918A398528f3fa4688b1d2CAB91"
+      "1155": "<mainnet-multivault-from-reference/network-config.md>",
+      "13579": "<testnet-multivault-from-reference/network-config.md>"
     }
   },
   "limits": {

@@ -7,8 +7,8 @@ Run these queries to look up costs, previews, vault state, and existence checks.
 ## Using cast
 
 ```bash
-RPC="https://rpc.intuition.systems/http"
-MULTIVAULT="0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e"
+# Assumes $RPC and $MULTIVAULT are already pinned from
+# `reference/network-config.md` or the Session Setup Pattern below.
 
 # Get atom creation cost
 cast call $MULTIVAULT "getAtomCost()(uint256)" --rpc-url $RPC
@@ -57,11 +57,11 @@ cast call $MULTIVAULT "getAtom(bytes32)(bytes)" 0x<atomId> --rpc-url $RPC
 import { createPublicClient, http } from 'viem'
 
 const client = createPublicClient({
-  chain: intuitionMainnet, // defined in SKILL.md
+  chain: intuitionMainnet, // defined in `reference/network-config.md`
   transport: http(),
 })
 
-const MULTIVAULT = '0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e'
+const MULTIVAULT = '<selected-network-multivault-address>'
 
 // Cost queries
 const atomCost = await client.readContract({
@@ -131,8 +131,8 @@ const [totalAssets, totalShares] = await client.readContract({
 ### Using cast
 
 ```bash
-# Set network constants from SKILL.md Network Configuration table
-# Mainnet shown — substitute testnet values if user selected testnet
+# Canonical values live in `reference/network-config.md`.
+# Mainnet shown — substitute the testnet row there if the user selected testnet.
 RPC="https://rpc.intuition.systems/http"
 MULTIVAULT="0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e"
 GRAPHQL="https://mainnet.intuition.sh/v1/graphql"
@@ -153,7 +153,8 @@ cast call $MULTIVAULT "getVaultFees()((uint256,uint256,uint256))" --rpc-url $RPC
 ### Using viem
 
 ```typescript
-const MULTIVAULT = '0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e'
+// Canonical network values live in `reference/network-config.md`.
+const MULTIVAULT = '<selected-network-multivault-address>'
 
 const atomCost = await client.readContract({ address: MULTIVAULT, abi: readAbi, functionName: 'getAtomCost' })
 const tripleCost = await client.readContract({ address: MULTIVAULT, abi: readAbi, functionName: 'getTripleCost' })
