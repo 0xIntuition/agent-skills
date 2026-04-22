@@ -64,6 +64,23 @@ In Obsidian:
 - Analysis and cross-run comparisons
 - Wallet/context-sensitive execution traces
 
+## Local Working Artifacts
+
+Use a gitignored local folder for temporary run output that is useful during review or a merge train but should not become part of the repo history.
+
+Recommended location:
+- `.artifacts/test-runs/<YYYY-MM-DD-short-name>/`
+
+Store here:
+- temporary run summaries
+- stdout/stderr captures from scripts
+- one-off prompt variants
+- local notes used to drive a review or merge sequence
+
+Do not commit `.artifacts/` or `.local/`. If a local artifact becomes reusable, promote it into a tracked prompt, script, or doc.
+
+Use `tests/templates/local-run-summary-template.md` as the starting point for run summaries.
+
 ## Readiness Guidance
 
 Suitable for early external use when:

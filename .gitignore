@@ -22,6 +22,10 @@ node_modules/
 .claude/plans/
 .claude/projects/
 
+# Local test artifacts
+.artifacts/
+.local/
+
 # Runtime enforcement (deferred — revisit for Claw skill)
 scripts/enforce-and-sign.js
 scripts/validate-tx-from-intent.js
