@@ -172,3 +172,12 @@ See `reference/schemas.md` → Batch Pinning for the full pattern.
 - Always call `previewAtomCreate(atomId, assets[i])` before executing. Fees are governance-configurable and may shift between sessions; the preview is the only reliable way to size expected shares and post-fee assets.
 - The function returns `bytes32[]` — the atom IDs for each created atom.
 - For batch creation, `atomDatas` and `assets` arrays must be the same length.
+
+## Post-Broadcast Verification
+
+After the wallet layer broadcasts the tx, verify per `reference/post-write-verification.md`:
+
+- Receipt `status = success`.
+- Each pre-computed `ATOM_ID` returns `true` for `isTermCreated` — the created IDs match the caller's expected `bytes32[]` without parsing logs.
+- If a non-zero initial deposit was included, `getShares(creator, atomId, curveId)` reflects it.
+- Event `AtomCreated(creator, termId, atomData, atomWallet)` is emitted for event-driven consumers (optional; on-chain reads are authoritative).

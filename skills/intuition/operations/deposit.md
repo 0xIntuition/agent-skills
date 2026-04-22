@@ -99,3 +99,11 @@ const minShares = expectedShares * 95n / 100n
 - The `curveId` must match a configured bonding curve. Query `getBondingCurveConfig()` once per session — the mainnet default is `1`.
 - To signal disagreement on a triple, deposit into the counter-triple instead: get its ID via `getCounterIdFromTripleId(tripleId)`.
 - The receiver address is who gets the shares — this can differ from the sender. When receiver differs from sender, the receiver must first call `approve(senderAddress, 1)` (1 = DEPOSIT). Enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH.
+
+## Post-Broadcast Verification
+
+After the wallet layer broadcasts the tx, verify per `reference/post-write-verification.md`:
+
+- Receipt `status = success`.
+- `getShares(receiver, termId, curveId)` delta satisfies `delta >= minShares` and is close to the `previewDeposit` expected shares.
+- Event `Deposited(sender, receiver, termId, curveId, assets, assetsAfterFees, shares, totalShares, vaultType)` is emitted (optional, for event-driven consumers).

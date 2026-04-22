@@ -128,3 +128,12 @@ Set `to` to `$MULTIVAULT`, `value` to the Step 3 result, and `chainId` to `$CHAI
 - Use `getCounterIdFromTripleId(tripleId)` to get the counter-triple's ID for disagreement signaling.
 - Triple IDs are deterministic: use `calculateTripleId(subjectId, predicateId, objectId)` to check existence.
 - If any referenced atom doesn't exist, the transaction reverts with `MultiVault_TermDoesNotExist(termId)`.
+
+## Post-Broadcast Verification
+
+After the wallet layer broadcasts the tx, verify per `reference/post-write-verification.md`:
+
+- Receipt `status = success`.
+- Each pre-computed `TRIPLE_ID` returns `true` for `isTermCreated` — the created IDs match the caller's expected `bytes32[]` without parsing logs.
+- If a non-zero initial deposit was included, `getShares(creator, tripleId, curveId)` reflects it.
+- Event `TripleCreated(creator, termId, subjectId, predicateId, objectId)` is emitted for event-driven consumers (optional).

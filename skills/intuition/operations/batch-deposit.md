@@ -125,3 +125,13 @@ Tolerance (5% here) is an example — pick per deployment based on expected fee 
 - Total `msg.value` must equal the sum of the `assets` array exactly.
 - Always preview each item and derive `minShares[]` with a tolerance before executing — see Slippage Protection.
 - When receiver differs from sender, the receiver must first call `approve(senderAddress, 1)` (1 = DEPOSIT). Enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH.
+
+## Post-Broadcast Verification
+
+After the wallet layer broadcasts the tx, verify per `reference/post-write-verification.md`. For each `termIds[i]`:
+
+- Receipt `status = success`.
+- `getShares(receiver, termIds[i], curveIds[i])` delta satisfies `delta >= minShares[i]`.
+- One `Deposited` event is emitted per term for event-driven consumers.
+
+A non-reverting batch can still land against unexpected state on a subset of terms — iterate every term ID, do not rely on batch-level receipt alone.

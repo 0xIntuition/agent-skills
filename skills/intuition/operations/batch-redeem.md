@@ -115,3 +115,13 @@ Tolerance (5% here) is an example — pick per deployment based on expected exit
 - All arrays (termIds, curveIds, shares, minAssets) must be the same length.
 - Exit fees apply to each redemption. Always preview each item and derive `minAssets[]` with a tolerance before executing — see Slippage Protection.
 - When the caller redeems on behalf of another account, the share owner must first call `approve(callerAddress, 2)` (2 = REDEMPTION). Enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH.
+
+## Post-Broadcast Verification
+
+After the wallet layer broadcasts the tx, verify per `reference/post-write-verification.md`. For each `termIds[i]`:
+
+- Receipt `status = success`.
+- `getShares(sender, termIds[i], curveIds[i])` delta equals `shares[i]` (burned amount).
+- Per-term assets received satisfy `>= minAssets[i]`; decode each `Redeemed` event for the exact amount.
+
+A non-reverting batch can still land against unexpected state on a subset of terms — iterate every term ID, do not rely on batch-level receipt alone.

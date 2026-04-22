@@ -50,6 +50,8 @@ These rules govern all GraphQL reads. They are the read-side equivalent of the w
 
 ## Revalidation Bridge (GraphQL -> Write)
 
+GraphQL indexes chain state asynchronously and is a **discovery layer**, not a source of truth. Before generating any write from GraphQL-discovered data, bridge to on-chain reads.
+
 Before generating any write transaction from GraphQL-discovered data:
 
 1. Revalidate target `term_id` on-chain with `isTermCreated`.
@@ -60,6 +62,55 @@ Before generating any write transaction from GraphQL-discovered data:
    - deposit: `previewDeposit`
    - redeem: `previewRedeem`
 4. Only then emit unsigned transaction JSON for signing/broadcast.
+
+### End-to-end flow
+
+The safe path for any GraphQL-seeded write is:
+
+```
+GraphQL (discover candidate term_ids, labels, positions)
+  ↓ never trust for costs, previews, or existence
+On-chain reads (isTermCreated, getAtomCost/getTripleCost, getVault, getShares)
+  ↓ refresh any stale session cache
+Preview (previewAtomCreate / previewTripleCreate / previewDeposit / previewRedeem)
+  ↓ derive minShares / minAssets from the preview + tolerance
+Simulation (cast call / viem simulateContract with full calldata + value)
+  ↓ surface revert reasons pre-broadcast
+Sign + broadcast
+  ↓ handler signs the unsigned tx this skill produced
+Post-broadcast verification (reference/post-write-verification.md)
+```
+
+Skipping any step trades safety for convenience. The indexer lag (see below) is the reason on-chain reads and previews cannot be replaced by cached GraphQL values.
+
+## Cache Freshness
+
+Session-cached values have different trust windows. Refresh at the indicated boundary — never use a value past its window for a safety-critical decision.
+
+| Value | Source | Trust window | Refresh trigger |
+|---|---|---|---|
+| `ATOM_COST` / `TRIPLE_COST` | On-chain (`getAtomCost` / `getTripleCost`) | Until governance updates fees | Any preview-vs-expected divergence; start of each write batch |
+| `CURVE_ID` (default) | On-chain (`getBondingCurveConfig`) | Per session | Cache once per session; re-query only if the config changes |
+| `previewDeposit` / `previewRedeem` result | On-chain | Seconds (race window) | Re-run immediately before encoding calldata |
+| `previewAtomCreate` / `previewTripleCreate` result | On-chain | Seconds (race window) | Re-run immediately before encoding calldata |
+| GraphQL-discovered `term_id` existence | Indexer | Stale after any matching write | Always revalidate with `isTermCreated` before using |
+| GraphQL-discovered labels / metadata | Indexer | Display-only; never safety-critical | N/A — treat as untrusted |
+
+When in doubt, re-read on-chain. On-chain reads are free (no gas, no $TRUST) and finalized the moment a tx mines.
+
+## Post-Write Indexer Lag
+
+After a successful write broadcast, GraphQL will not reflect the new state immediately. The indexer needs to ingest the block, decode events, and apply updates. Typical lag is seconds; under load it can extend to minutes.
+
+Operational rules:
+
+- **On-chain reads are finalized immediately** once the tx mines. Use them (not GraphQL) for anything safety-critical in the lag window: follow-on writes, user-visible balance displays, downstream approvals.
+- **Do not chain writes off GraphQL-only observations made within the lag window.** For example: after creating an atom, do not use a GraphQL query to confirm existence before creating a triple that references it — use `isTermCreated` on-chain instead.
+- **Invalidate session caches on write.** Any cached GraphQL result that could be affected by the write (the writer's positions, the affected vault's stats, predicate counts if a new triple used a tracked predicate) must be treated as stale and re-derived — preferably from on-chain reads until the indexer catches up.
+- **Detect catch-up before falling back to GraphQL.** Poll GraphQL for the affected `term_id` or position and compare against the on-chain value. When GraphQL matches on-chain, the indexer has caught up for that record. Do not assume catch-up by elapsed time alone.
+- **Separate GraphQL's discovery role from its verification role.** GraphQL is authoritative for `"which atoms match this label?"`; on-chain is authoritative for `"does this term exist?"` and `"what is this vault's state?"`. Use each for what it is.
+
+See `reference/post-write-verification.md` for the full post-broadcast verification sequence, including the events and on-chain state reads that confirm a write landed correctly.
 
 ## Request Format
 
