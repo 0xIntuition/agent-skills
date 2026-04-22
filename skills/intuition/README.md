@@ -10,10 +10,10 @@ The agent produces unsigned transaction parameters:
 
 ```
 Transaction: createAtoms
-  To:       0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e
+  To:       0x<selected-network-multivault-address>
   Data:     0x<calldata>
   Value:    <wei> (<amount> $TRUST)
-  Chain ID: 1155
+  Chain ID: <selected-network-chain-id>
 ```
 
 The builder's signing infrastructure handles the rest.
@@ -64,12 +64,13 @@ On first invocation the agent will ask which network to use if not specified.
 
 ## Supported Networks
 
-| Network | Chain ID | MultiVault |
-|---------|----------|------------|
-| Intuition Mainnet | 1155 | `0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e` |
-| Intuition Testnet | 13579 | `0x2Ece8D4dEdcB9918A398528f3fa4688b1d2CAB91` |
+Network metadata -- chain IDs, MultiVault addresses, RPC URLs, GraphQL
+endpoints, explorer URLs, and viem chain definitions -- lives in
+[reference/network-config.md](./reference/network-config.md).
 
-Both are Intuition L3 chains. The native token is **$TRUST** (mainnet) / **tTRUST** (testnet). Agents must define custom chains for viem -- built-in chain definitions won't work.
+Both networks are Intuition L3 chains. The native token is **$TRUST**
+(mainnet) / **tTRUST** (testnet). Agents must define custom chains for viem --
+built-in chain definitions won't work.
 
 ## How Writes Work
 

@@ -110,6 +110,7 @@ Read these files when performing the corresponding operation:
 
 ```
 reference/                        (Path A: read-only — load these directly)
+  network-config.md               Canonical network metadata, session env values, and viem chain defs
   graphql-queries.md              GraphQL discovery — search, traverse, aggregate, graph landscape
   reading-state.md                On-chain reads and session setup (Path B prerequisite)
   config-fields.md                Protocol config semantics — which fields constrain txs, which are informational
@@ -149,12 +150,10 @@ Which network?
 
 ### Network Configuration
 
-| Network | Chain ID | MultiVault | RPC | GraphQL |
-|---------|----------|------------|-----|---------|
-| Intuition Mainnet | 1155 | `0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e` | `https://rpc.intuition.systems/http` | `https://mainnet.intuition.sh/v1/graphql` |
-| Intuition Testnet | 13579 | `0x2Ece8D4dEdcB9918A398528f3fa4688b1d2CAB91` | `https://testnet.rpc.intuition.systems/http` | `https://testnet.intuition.sh/v1/graphql` |
-
-Use the selected row for all operations in the session. Switch with `--chain mainnet` or `--chain testnet`.
+Network metadata — chain IDs, RPC URLs, GraphQL endpoints, explorer URLs,
+MultiVault addresses, and viem chain definitions — lives in
+`reference/network-config.md`. Use the selected row there for all operations in
+the session. Switch with `--chain mainnet` or `--chain testnet`.
 
 ### Network Characteristics
 
@@ -168,32 +167,6 @@ Beyond addresses and chain IDs, the networks have different data characteristics
 | Contested claims | Exist with real stakes, mostly unchallenged | Less meaningful |
 
 Use testnet for development and testing writes. Use mainnet for production exploration and meaningful attestations.
-
-### Custom Chain Definition (viem)
-
-Intuition runs on an L3 not indexed by Etherscan. Agents must define the chain manually:
-
-```typescript
-import { defineChain } from 'viem'
-
-// Mainnet
-export const intuitionMainnet = defineChain({
-  id: 1155,
-  name: 'Intuition',
-  nativeCurrency: { decimals: 18, name: 'Intuition', symbol: 'TRUST' },
-  rpcUrls: { default: { http: ['https://rpc.intuition.systems/http'] } },
-  blockExplorers: { default: { name: 'Intuition Explorer', url: 'https://explorer.intuition.systems' } },
-})
-
-// Testnet
-export const intuitionTestnet = defineChain({
-  id: 13579,
-  name: 'Intuition Testnet',
-  nativeCurrency: { decimals: 18, name: 'Test Trust', symbol: 'tTRUST' },
-  rpcUrls: { default: { http: ['https://testnet.rpc.intuition.systems/http'] } },
-  blockExplorers: { default: { name: 'Intuition Testnet Explorer', url: 'https://testnet.explorer.intuition.systems' } },
-})
-```
 
 ## ABI Fragments
 
@@ -397,7 +370,7 @@ These facts govern all Intuition transactions. Reference them when encoding oper
 
 9. **Creation assets[] is the full payment** -- Each `assets[i]` must be >= creation cost. `msg.value` must exactly equal `sum(assets[])`. The creation cost is deducted per item; the remainder deposits into the vault.
 
-10. **Custom chain definition required** -- Intuition L3 (chain 1155/13579) requires `defineChain()` in viem. See Custom Chain Definition above.
+10. **Custom chain definition required** -- Intuition L3 (chain 1155/13579) requires `defineChain()` in viem. See `reference/network-config.md`.
 
 11. **Creation returns bytes32[]** -- `createAtoms` and `createTriples` return `bytes32[]` — deterministic hashes of the input data. The caller already computed each expected ID pre-broadcast via `calculateAtomId(data)` / `calculateTripleId(s, p, o)`; post-broadcast verification reconstructs the `bytes32[]` from those values rather than parsing logs. See `reference/post-write-verification.md`.
 

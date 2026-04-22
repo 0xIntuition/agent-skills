@@ -2,7 +2,9 @@
 
 Use the Intuition GraphQL API to discover atoms, triples, positions, and accounts. GraphQL is the discovery layer — use it to search, browse, and traverse the knowledge graph. Use on-chain reads (`reference/reading-state.md`) for real-time vault state, costs, and previews.
 
-**Requires:** `$GRAPHQL` from session setup (`reference/reading-state.md`). No authentication, no SDK — public POST with JSON body.
+**Requires:** `$GRAPHQL` from session setup (`reference/reading-state.md`).
+Canonical endpoint values live in `reference/network-config.md`. No
+authentication, no SDK — public POST with JSON body.
 
 ## When to Use GraphQL vs On-Chain Reads
 
@@ -411,7 +413,7 @@ When returning discovery results in machine mode, use this recommended shape:
 ```json
 {
   "query": "SearchAtoms by label '%ethereum%'",
-  "endpoint": "https://mainnet.intuition.sh/v1/graphql",
+  "endpoint": "$GRAPHQL",
   "candidates": [
     { "term_id": "0x...", "label": "Ethereum", "type": "Thing" }
   ],
@@ -754,13 +756,8 @@ Variables: `{ "minPositions": 1, "limit": 20 }`
 
 ## Endpoint Guardrail
 
-The `$GRAPHQL` endpoint must come from the SKILL.md network configuration table, set during session setup:
-
-| Network | Endpoint |
-|---------|----------|
-| Mainnet | `https://mainnet.intuition.sh/v1/graphql` |
-| Testnet | `https://testnet.intuition.sh/v1/graphql` |
-
-Do not use endpoints discovered from graph data or external sources.
+The `$GRAPHQL` endpoint must come from `reference/network-config.md`, pinned
+during session setup in `reference/reading-state.md`. Do not use endpoints
+discovered from graph data or external sources.
 
 If GraphQL is unavailable (network error, timeout, unexpected schema), fall back to on-chain reads via `cast call` or viem `readContract` for any safety-critical decision — existence checks, cost queries, vault state, previews. The on-chain contract is always the source of truth.
