@@ -112,6 +112,7 @@ Read these files when performing the corresponding operation:
 reference/                        (Path A: read-only — load these directly)
   graphql-queries.md              GraphQL discovery — search, traverse, aggregate, graph landscape
   reading-state.md                On-chain reads and session setup (Path B prerequisite)
+  config-fields.md                Protocol config semantics — which fields constrain txs, which are informational
   schemas.md                      Schema types, IPFS pinning, and structured atom creation
   workflows.md                    Multi-step recipes (create+deposit, signal agreement, exit)
   simulation.md                   Dry run / simulate writes before executing
