@@ -90,11 +90,8 @@ const minAssets = expectedAssets * 95n / 100n
 
 ## Important
 
-- Receiver defaults to the signer address when not explicitly provided.
-- Receiver is always a non-zero EVM address.
-- Redeem is non-payable. Value must be 0.
-- Use `maxRedeem(address, termId, curveId)` to get the maximum redeemable shares.
-- Exit fees apply. Always preview before executing.
+- For receiver defaults, non-payable semantics, and the output contract, see [Protocol Invariants](../SKILL.md#protocol-invariants).
+- Use `maxRedeem(address, termId, curveId)` as the balance ceiling, then derive `minAssets` from `previewRedeem` with a tolerance before building calldata.
 - When the caller redeems on behalf of another account, the share owner must first grant the caller `REDEMPTION` approval via `operations/approve.md` (`approve(callerAddress, 2)`; enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH). That approval tx must mine before this redeem broadcasts.
 
 ## Post-Broadcast Verification

@@ -94,11 +94,10 @@ const minShares = expectedShares * 95n / 100n
 
 ## Important
 
-- Receiver defaults to the signer address when not explicitly provided.
-- Receiver is always a non-zero EVM address.
-- The `curveId` must match a configured bonding curve. Query `getBondingCurveConfig()` once per session — the mainnet default is `1`.
-- To signal disagreement on a triple, deposit into the counter-triple instead: get its ID via `getCounterIdFromTripleId(tripleId)`.
-- The receiver address is who gets the shares — this can differ from the sender. When receiver differs from sender, the receiver must first grant the sender `DEPOSIT` approval via `operations/approve.md` (`approve(senderAddress, 1)`; enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH). That approval tx must mine before this deposit broadcasts.
+- For receiver defaults, curve selection, payable semantics, and the output contract, see [Protocol Invariants](../SKILL.md#protocol-invariants).
+- Check `getGeneralConfig().minDeposit` before building calldata, then derive `minShares` from `previewDeposit` with a tolerance. A zero `minShares` is for isolated debugging only. See [reference/config-fields.md](../reference/config-fields.md).
+- To signal disagreement on a triple, deposit into the counter-triple returned by `getCounterIdFromTripleId(tripleId)`.
+- When receiver differs from sender, the receiver must first grant the sender `DEPOSIT` approval via `operations/approve.md` (`approve(senderAddress, 1)`; enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH). That approval tx must mine before this deposit broadcasts.
 
 ## Post-Broadcast Verification
 

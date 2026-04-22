@@ -121,13 +121,10 @@ Set `to` to `$MULTIVAULT`, `value` to the Step 3 result, and `chainId` to `$CHAI
 
 ## Important
 
-- Subject, predicate, and object must be canonical atoms — IPFS-pinned (type `Thing`) or CAIP-10 addresses. Plain-string atoms are legacy duplicates with negligible usage; do not reference them here. If an atom is not yet canonical, pin and create it first via `reference/schemas.md` and `operations/create-atoms.md`.
-- Always call `previewTripleCreate(tripleId, assets[i])` before executing. Fees are governance-configurable and may shift between sessions; the preview is the only reliable way to size expected shares and post-fee assets.
-- All four arrays (subjectIds, predicateIds, objectIds, assets) must be the same length.
-- Every triple automatically creates a **counter-triple** vault. Deposit into the counter-triple to signal disagreement.
-- Use `getCounterIdFromTripleId(tripleId)` to get the counter-triple's ID for disagreement signaling.
-- Triple IDs are deterministic: use `calculateTripleId(subjectId, predicateId, objectId)` to check existence.
-- If any referenced atom doesn't exist, the transaction reverts with `MultiVault_TermDoesNotExist(termId)`.
+- For payable semantics, `msg.value` rules, and the output contract, see [Protocol Invariants](../SKILL.md#protocol-invariants).
+- Subject, predicate, and object must be canonical atoms — IPFS-pinned or CAIP-10. Use `calculateTripleId(subjectId, predicateId, objectId)` to check existence before creating; plain-string atoms are legacy duplicates.
+- Always call `previewTripleCreate(tripleId, assets[i])` before executing. Cost-only creation can return zero user shares; stop only when a non-zero initial deposit would still mint zero shares.
+- All four arrays must stay index-aligned and the same length. Every created triple also creates its counter-triple; use `getCounterIdFromTripleId(tripleId)` when the caller intends to stake against the claim.
 
 ## Post-Broadcast Verification
 

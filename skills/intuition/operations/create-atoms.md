@@ -168,10 +168,10 @@ See `reference/schemas.md` → Batch Pinning for the full pattern.
 
 ## Important
 
-- Atom IDs are deterministic. Creating an atom that already exists reverts with `MultiVault_AtomExists`. Always check existence with `calculateAtomId` + `isTermCreated` before creating.
-- Always call `previewAtomCreate(atomId, assets[i])` before executing. Fees are governance-configurable and may shift between sessions; the preview is the only reliable way to size expected shares and post-fee assets.
-- The function returns `bytes32[]` — the atom IDs for each created atom.
-- For batch creation, `atomDatas` and `assets` arrays must be the same length.
+- For payable semantics, `msg.value` rules, and the output contract, see [Protocol Invariants](../SKILL.md#protocol-invariants).
+- Atom IDs are deterministic. Check `calculateAtomId` + `isTermCreated` before creating; duplicate creation reverts with `MultiVault_AtomExists`.
+- Always call `previewAtomCreate(atomId, assets[i])` before executing. Cost-only creation can return zero user shares; stop only when a non-zero initial deposit would still mint zero shares.
+- For batch creation, `atomDatas` and `assets` must stay index-aligned and the same length.
 
 ## Post-Broadcast Verification
 

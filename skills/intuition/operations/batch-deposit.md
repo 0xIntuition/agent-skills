@@ -118,12 +118,9 @@ Tolerance (5% here) is an example — pick per deployment based on expected fee 
 
 ## Important
 
-- Receiver defaults to the signer address when not explicitly provided.
-- Receiver is always a non-zero EVM address.
-- All arrays (termIds, curveIds, assets, minShares) must be the same length.
-- Each `curveIds` element can differ, but typically they're all the same `defaultCurveId`.
-- Total `msg.value` must equal the sum of the `assets` array exactly.
-- Always preview each item and derive `minShares[]` with a tolerance before executing — see Slippage Protection.
+- For receiver defaults, payable semantics, and the output contract, see [Protocol Invariants](../SKILL.md#protocol-invariants).
+- All arrays must stay index-aligned and the same length, and `msg.value` must equal `sum(assets[])` exactly.
+- Check `getGeneralConfig().minDeposit` for each item, then derive every `minShares[i]` from `previewDeposit` with a tolerance. A zero-filled `minShares[]` is debug-only. See [reference/config-fields.md](../reference/config-fields.md).
 - When receiver differs from sender, the receiver must first grant the sender `DEPOSIT` approval via `operations/approve.md` (`approve(senderAddress, 1)`; enum: 0=NONE, 1=DEPOSIT, 2=REDEMPTION, 3=BOTH). One approval covers every `termId` in the batch, but that approval tx must mine before this batch deposit broadcasts.
 
 ## Post-Broadcast Verification
