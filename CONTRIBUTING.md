@@ -156,6 +156,19 @@ Optional but recommended:
 
 The body of `SKILL.md` should be written **for agents**, not humans. Be precise, explicit, and structured. Agents will follow these instructions literally.
 
+## Versioning and Releases
+
+The `metadata.version` field is release metadata, not PR metadata.
+
+- Do **not** bump `metadata.version` in ordinary feature or fix PRs.
+- Bump it only in a dedicated release PR that also updates `CHANGELOG.md`.
+- Version by agent-visible behavior, not by whether the diff is "just docs."
+  If a documentation change alters tx generation, safety gates, or verification
+  behavior, it is an externally visible change.
+
+See [RELEASING.md](RELEASING.md) for the semantic versioning rules and release
+checklist used in this repo.
+
 ### README.md
 
 Human-facing documentation. Should cover:
