@@ -217,11 +217,18 @@ query SearchTerm($query: String!, $limit: Int) {
     atom { term_id label image type creator { id label } }
     triple {
       term_id
-      subject { label }
-      predicate { label }
-      object { label }
+      subject_term { ...TermSearchResult }
+      predicate_term { ...TermSearchResult }
+      object_term { ...TermSearchResult }
     }
   }
+}
+
+fragment TermSearchResult on terms {
+  id
+  type
+  atom { term_id label image type }
+  triple { term_id subject_id predicate_id object_id }
 }
 ```
 
@@ -296,12 +303,7 @@ fragment TermElement on terms {
     image
     type
   }
-  triple {
-    term_id
-    subject { label }
-    predicate { label }
-    object { label }
-  }
+  triple { term_id subject_id predicate_id object_id }
 }
 ```
 
@@ -329,13 +331,21 @@ query GetPositions($accountId: String!, $limit: Int!) {
       term {
         atom { term_id label image }
         triple {
-          subject { label }
-          predicate { label }
-          object { label }
+          term_id
+          subject_term { ...TermPreview }
+          predicate_term { ...TermPreview }
+          object_term { ...TermPreview }
         }
       }
     }
   }
+}
+
+fragment TermPreview on terms {
+  id
+  type
+  atom { term_id label image type }
+  triple { term_id subject_id predicate_id object_id }
 }
 ```
 
@@ -362,9 +372,9 @@ query GlobalSearch($searchTerm: String!, $limit: Int!) {
     limit: $limit
   ) {
     term_id
-    subject { label }
-    predicate { label }
-    object { label }
+    subject_term { ...TermPreview }
+    predicate_term { ...TermPreview }
+    object_term { ...TermPreview }
   }
   accounts(
     where: {
@@ -380,7 +390,18 @@ query GlobalSearch($searchTerm: String!, $limit: Int!) {
     image
   }
 }
+
+fragment TermPreview on terms {
+  id
+  type
+  atom { term_id label image type }
+  triple { term_id subject_id predicate_id object_id }
+}
 ```
+
+The triple filter above searches atom labels in component positions. For
+triple-valued component positions, discover by `term_id` or use the
+nested-triple discovery pattern below, then render with `*_term`.
 
 ## Composing Filters
 
@@ -526,17 +547,24 @@ query AtomTriples($atomId: String!, $limit: Int!) {
     limit: $limit
   ) {
     term_id
-    predicate { label }
-    object { term_id label }
+    predicate_term { ...TermPreview }
+    object_term { ...TermPreview }
   }
   as_object: triples(
     where: { object: { term_id: { _eq: $atomId } } }
     limit: $limit
   ) {
     term_id
-    subject { term_id label }
-    predicate { label }
+    subject_term { ...TermPreview }
+    predicate_term { ...TermPreview }
   }
+}
+
+fragment TermPreview on terms {
+  id
+  type
+  atom { term_id label image type }
+  triple { term_id subject_id predicate_id object_id }
 }
 ```
 
@@ -586,12 +614,7 @@ fragment TermLabel on terms {
     image
     type
   }
-  triple {
-    term_id
-    subject { label }
-    predicate { label }
-    object { label }
-  }
+  triple { term_id subject_id predicate_id object_id }
 }
 ```
 
@@ -630,12 +653,7 @@ fragment TermLabel on terms {
   id
   type
   atom { term_id label }
-  triple {
-    term_id
-    subject { label }
-    predicate { label }
-    object { label }
-  }
+  triple { term_id subject_id predicate_id object_id }
 }
 ```
 
@@ -680,12 +698,7 @@ fragment TermLabel on terms {
   id
   type
   atom { term_id label type }
-  triple {
-    term_id
-    subject { label }
-    predicate { label }
-    object { label }
-  }
+  triple { term_id subject_id predicate_id object_id }
 }
 ```
 
@@ -708,8 +721,8 @@ query ClaimsForPredicate($predicateId: String!, $limit: Int!) {
     limit: $limit
     order_by: { created_at: desc }
   ) {
-    subject { term_id label }
-    object { term_id label }
+    subject_term { ...TermPreview }
+    object_term { ...TermPreview }
     term {
       vaults {
         curve_id
@@ -718,6 +731,13 @@ query ClaimsForPredicate($predicateId: String!, $limit: Int!) {
       }
     }
   }
+}
+
+fragment TermPreview on terms {
+  id
+  type
+  atom { term_id label image type }
+  triple { term_id subject_id predicate_id object_id }
 }
 ```
 
@@ -750,15 +770,26 @@ query DiscoverNestedTriple($searchTerm: String!, $limit: Int!) {
     total_market_cap
     triple {
       term_id
-      subject { label }
-      predicate { label }
-      object { label }
+      subject_term { ...TermPreview }
+      predicate_term { ...TermPreview }
+      object_term { ...TermPreview }
     }
   }
+}
+
+fragment TermPreview on terms {
+  id
+  type
+  atom { term_id label image type }
+  triple { term_id subject_id predicate_id object_id }
 }
 ```
 
 Variables: `{ "searchTerm": "%trust%", "limit": 10 }`
+
+The filter above searches atom labels inside triple component positions. For
+deeper nested composition, query by known component `term_id`s or expand the
+returned triple terms with `TripleDetails`.
 
 Operationally:
 
