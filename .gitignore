@@ -26,9 +26,6 @@ node_modules/
 .artifacts/
 .local/
 
-# Runtime enforcement (deferred — revisit for Claw skill)
+# Runtime enforcement scripts remain repo-local helpers
 scripts/enforce-and-sign.js
 scripts/validate-tx-from-intent.js
-skills/intuition/reference/runtime-enforcement.md
-skills/intuition/reference/autonomous-policy.example.json
-skills/intuition/reference/schemas/

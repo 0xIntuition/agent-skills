@@ -57,8 +57,8 @@ For unattended agents, policy-driven approvals are the control plane for safe ex
 - Load policy from `./.intuition/autonomous-policy.json` or the path in `INTUITION_POLICY_PATH`.
 - If no policy file is available, use `manual-review` mode.
 - Policy gates run before signing and broadcasting. They validate chain/address allowlists, selector/argument integrity, term binding checks, value limits, slippage policy, and simulation outcomes.
-- Runtime enforcement is executed by the validator: `scripts/validate-tx-from-intent.js` (see `reference/runtime-enforcement.md`).
-- Use the blocking wrapper `scripts/enforce-and-sign.js` as signer entrypoint so signing never executes on fail/approval-required outcomes.
+- Implement runtime enforcement in your signer or executor pipeline using the blocking pattern in `reference/runtime-enforcement.md`.
+- The shipped skill includes the schemas, policy example, and reference flow; it does not bundle executable signer middleware.
 
 Read `reference/autonomous-policy.md` for the schema and decision flow.
 
@@ -87,6 +87,11 @@ For approval-required writes, output one approval request object:
     "data": "0x<calldata>",
     "value": "<wei-as-base-10-string>",
     "chainId": "<chain-id-as-base-10-string>"
+  },
+  "checks": {
+    "allowlist": "pass",
+    "limits": "pass",
+    "simulation": "pass"
   }
 }
 ```
@@ -103,6 +108,9 @@ For pin failures (IPFS pinning failed before on-chain write), output one pin fai
 ```
 
 The JSON object is the complete machine-mode response.
+
+Use base-10 strings for top-level numeric transaction fields (`value`,
+`chainId`) in machine-readable JSON.
 
 ## Skill Contents
 
