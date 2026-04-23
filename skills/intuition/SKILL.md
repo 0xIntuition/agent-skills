@@ -120,6 +120,7 @@ Read these files when performing the corresponding operation:
 reference/                        (Path A: read-only — load these directly)
   network-config.md               Canonical network metadata, session env values, and viem chain defs
   graphql-queries.md              GraphQL discovery — search, traverse, aggregate, graph landscape
+  nested-triples.md                Nested triple composition and term-aware rendering
   reading-state.md                On-chain reads and session setup (Path B prerequisite)
   config-fields.md                Protocol config semantics — which fields constrain txs, which are informational
   schemas.md                      Schema types, IPFS pinning, and structured atom creation
@@ -130,7 +131,7 @@ reference/                        (Path A: read-only — load these directly)
 
 operations/                       (Path B: writes — run session setup first)
   create-atoms.md                 Create atom vaults from URI data
-  create-triples.md               Create triple vaults linking three atoms
+  create-triples.md               Create triple vaults linking three terms
   deposit.md                      Deposit $TRUST into a vault, mint shares
   redeem.md                       Redeem shares from a vault, receive $TRUST
   batch-deposit.md                Deposit into multiple vaults in one transaction
@@ -141,7 +142,7 @@ operations/                       (Path B: writes — run session setup first)
 ## Protocol Model
 
 - **Atoms** represent any concept — a person, URL, address, label. Created by encoding a URI as bytes. Each has a deterministic `bytes32` ID and a vault. For rich metadata (name, description, image, URL), pin structured data to IPFS first and encode the `ipfs://` URI — see `reference/schemas.md`.
-- **Triples** are claims linking three atoms: `(subject, predicate, object)` — e.g., `(Alice, trusts, Bob)`. Each has a vault and an automatic counter-triple vault.
+- **Triples** are claims linking three terms: `(subject, predicate, object)`. The common case links three atoms, e.g. `(Alice, trusts, Bob)`, but any position may reuse an existing triple `term_id` for nested composition. Each triple has a vault and an automatic counter-triple vault.
 - **Vaults** back every atom and triple. Depositing $TRUST mints shares on a bonding curve. Depositing into a triple signals agreement; depositing into its counter-triple signals disagreement.
 
 Native token: **$TRUST** (mainnet) / **tTRUST** (testnet), 18 decimals. All `msg.value` and gas are denominated in TRUST. Gas fees are negligible (~0.0001 TRUST per tx).
