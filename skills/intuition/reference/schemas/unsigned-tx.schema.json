@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://intuition.sh/schemas/unsigned-tx.schema.json",
+  "title": "Unsigned Intuition Transaction",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "to",
+    "data",
+    "value",
+    "chainId"
+  ],
+  "properties": {
+    "to": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]{40}$"
+    },
+    "data": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]+$",
+      "minLength": 10
+    },
+    "value": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "chainId": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    }
+  }
+}

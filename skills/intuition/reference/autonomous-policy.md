@@ -5,6 +5,10 @@ Use this reference for unattended execution. It defines how an agent moves from 
 - an executable unsigned transaction, or
 - an approval request object for human or external policy-engine review.
 
+The shipped skill includes the policy examples and JSON schemas referenced
+below. Implement the blocking validator and signer wrapper in your own executor
+pipeline.
+
 ## Purpose
 
 This skill can generate correct calldata and value. Policy gates decide whether execution is allowed right now.
@@ -115,7 +119,7 @@ Minimum intent object:
 ```json
 {
   "operation": "deposit",
-  "chainId": 1155,
+  "chainId": "1155",
   "inputs": {
     "termId": "0x...",
     "amountWei": "10000000000000000",
@@ -145,6 +149,9 @@ Minimum intent object:
    - `strict`/`permissive` emit approval request if value/op exceeds approval policy.
    - Otherwise emit executable tx JSON.
 
+Use base-10 strings for top-level transaction fields in machine-readable JSON:
+`value`, `chainId`, and the same fields inside `proposedTx`.
+
 ## Approval Request Output
 
 Use this shape when review is required:
@@ -158,7 +165,7 @@ Use this shape when review is required:
     "to": "0x...",
     "data": "0x...",
     "value": "100000000000000000",
-    "chainId": 1155
+    "chainId": "1155"
   },
   "checks": {
     "allowlist": "pass",
@@ -177,7 +184,7 @@ If policy approves, output only:
   "to": "0x...",
   "data": "0x...",
   "value": "100000000000000000",
-  "chainId": 1155
+  "chainId": "1155"
 }
 ```
 
