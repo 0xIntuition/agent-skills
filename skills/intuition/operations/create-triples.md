@@ -1,6 +1,6 @@
 # createTriples
 
-Create one or more triple vaults linking existing atoms. Follow these steps in order.
+Create one or more triple vaults linking existing terms. Follow these steps in order.
 
 **Requires:** `$RPC`, `$MULTIVAULT`, `$TRIPLE_COST` from session setup (`reference/reading-state.md`).
 
@@ -8,7 +8,11 @@ Create one or more triple vaults linking existing atoms. Follow these steps in o
 
 ## Step 1: Query Prerequisites
 
-Subject, predicate, and object atoms must already exist as canonical (IPFS-pinned or CAIP-10) atoms. Plain-string atoms are legacy duplicates — do not reference them when encoding new triples. If any of the three atoms does not yet exist, pin and create it first via `reference/schemas.md` and `operations/create-atoms.md`.
+Each position must already exist as a term. The common case is a canonical atom
+(IPFS-pinned or CAIP-10). An existing triple `term_id` is also valid for nested
+composition. The example below shows the common atom path; if a position is
+already an existing triple term, use that `term_id` directly and skip the
+IPFS/`calculateAtomId` step for that position.
 
 ```bash
 # $SUBJECT_URI, $PREDICATE_URI, $OBJECT_URI come from the pin flow
@@ -22,7 +26,7 @@ SUBJECT_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" "$SUBJECT_D
 PREDICATE_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" "$PREDICATE_DATA" --rpc-url $RPC)
 OBJECT_ID=$(cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" "$OBJECT_DATA" --rpc-url $RPC)
 
-# All three atoms must exist before the triple can be created (must return true).
+# All three term IDs must exist before the triple can be created (must return true).
 cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" $SUBJECT_ID --rpc-url $RPC
 cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" $PREDICATE_ID --rpc-url $RPC
 cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" $OBJECT_ID --rpc-url $RPC
@@ -41,7 +45,37 @@ cast call $MULTIVAULT "previewTripleCreate(bytes32,uint256)(uint256,uint256,uint
 # Returns (expectedShares, assetsAfterFixedFees, assetsAfterFees)
 ```
 
-If any of the three atoms doesn't exist, create it first using `operations/create-atoms.md` (which pins via `reference/schemas.md`). Do not substitute plain-string atoms — those are legacy duplicates, not canonical entries. If the triple itself already exists, skip creation; a duplicate creation reverts with `MultiVault_TripleExists`.
+If any atom-backed position doesn't exist yet, create it first using
+`operations/create-atoms.md` (which pins via `reference/schemas.md`). Do not
+substitute plain-string atoms — those are legacy duplicates, not canonical
+entries. If the triple itself already exists, skip creation; a duplicate
+creation reverts with `MultiVault_TripleExists`.
+
+## Nested Positions
+
+Nested triples let you make statements about statements (reification) using the
+same `bytes32` term IDs you already use for atoms.
+
+- No special encoding is required. If a position is an existing triple, pass its
+  `term_id` directly in the `subjectIds`, `predicateIds`, or `objectIds` array.
+- `isTermCreated(termId)` is the existence check. If the caller intends to nest
+  a positive triple specifically, classify the term before composition.
+- `getVaultType(termId)` is the primary classifier:
+  `0 = ATOM`, `1 = TRIPLE`, `2 = COUNTER_TRIPLE`.
+- `isTriple(termId)` is a coarse check and returns `true` for counter-triples
+  too. Do not use it alone when the distinction matters.
+- This skill's happy-path examples use atoms and positive triples. If a term ID
+  came from an unfamiliar source, classify it before composing.
+
+```bash
+# Classify an already-known term before nesting it intentionally.
+cast call $MULTIVAULT "getVaultType(bytes32)(uint8)" $SUBJECT_ID --rpc-url $RPC
+
+# Example:
+# T1 = (A, P, B)
+# T2 = (T1, Q, C)
+# Use T1's term_id directly as the subject of T2.
+```
 
 ## Step 2: Encode the Calldata
 
@@ -56,8 +90,9 @@ CALLDATA=$(cast calldata "createTriples(bytes32[],bytes32[],bytes32[],uint256[])
 ### Using viem
 
 ```typescript
-// subjectIds, predicateIds, objectIds are bytes32 IDs derived from pinned atoms
-// (via `calculateAtomId` on the hex-encoded IPFS or CAIP-10 URI).
+// subjectIds, predicateIds, objectIds are bytes32 term IDs. The common case is
+// atom IDs derived from pinned metadata, but an existing triple term_id can also
+// be reused directly for nested composition.
 // Each `assets[i]` must be >= tripleCost.
 
 // Preview each triple creation before encoding — fees are governance-configurable.
@@ -122,7 +157,11 @@ Set `to` to `$MULTIVAULT`, `value` to the Step 3 result, and `chainId` to `$CHAI
 ## Important
 
 - For payable semantics, `msg.value` rules, and the output contract, see [Protocol Invariants](../SKILL.md#protocol-invariants).
-- Subject, predicate, and object must be canonical atoms — IPFS-pinned or CAIP-10. Use `calculateTripleId(subjectId, predicateId, objectId)` to check existence before creating; plain-string atoms are legacy duplicates.
+- Each position must be an existing term. The common case is a canonical atom;
+  nested composition may also reuse an existing positive triple term_id.
+- Use `getVaultType(termId)` when the caller intends to nest a positive triple
+  specifically. `isTriple(termId)` is not enough to distinguish positive
+  triples from counter-triples.
 - Always call `previewTripleCreate(tripleId, assets[i])` before executing. Cost-only creation can return zero user shares; stop only when a non-zero initial deposit would still mint zero shares.
 - All four arrays must stay index-aligned and the same length. Every created triple also creates its counter-triple; use `getCounterIdFromTripleId(tripleId)` when the caller intends to stake against the claim.
 

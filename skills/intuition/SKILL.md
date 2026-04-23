@@ -239,6 +239,12 @@ const readAbi = parseAbi([
 ])
 ```
 
+For nested composition, `getVaultType(termId)` is the precise classifier:
+`0 = ATOM`, `1 = TRIPLE`, `2 = COUNTER_TRIPLE`. `isTriple(termId)` is a
+coarser check and returns `true` for counter-triples too. `calculateTripleId`
+is deterministic, so callers can precompute future triple `term_id`s before
+broadcasting.
+
 ### Write Functions
 
 ```typescript
@@ -293,9 +299,18 @@ Pin everything — including predicates (`"implements"`, `"trusts"`) and concept
 
 The atom's `bytes32` ID is deterministically computed from its data via `calculateAtomId(bytes)`. Creating an atom that already exists reverts with `MultiVault_AtomExists`. Always check `isTermCreated(calculateAtomId(data))` before calling `createAtoms`.
 
-### Triples: Three Atom IDs
+### Triples: Three Term IDs
 
-A triple links three existing atoms: `(subject, predicate, object)`. All three must be created first. Every triple automatically gets a **counter-triple** vault for signaling disagreement.
+A triple links three existing terms: `(subject, predicate, object)`. The
+common case is three atoms, but an existing triple `term_id` may also be reused
+as a position for nested composition. All three terms must already exist. Every
+triple automatically gets a **counter-triple** vault for signaling
+disagreement.
+
+A triple's `term_id` is itself a valid term and may be used as subject,
+predicate, or object in subsequent triples (reification). Use
+`getVaultType(termId)` when you need to distinguish positive triples from
+counter-triples. See `reference/nested-triples.md`.
 
 **Finding predicate atoms**: Do not hardcode predicate atom IDs. Canonical predicates are IPFS-pinned atoms — their IDs depend on the pinned URI, not a plain string. Query the graph to find existing predicates by label:
 
@@ -344,7 +359,7 @@ To perform a write, open the corresponding operation file and follow its steps e
 | When you need to... | Read this file | Payable |
 |---------------------|----------------|---------|
 | Create atoms from URIs | `operations/create-atoms.md` (always pin to IPFS first via `reference/schemas.md`, except CAIP-10) | Yes — `msg.value = sum(assets[])`, each `assets[i] >= atomCost` |
-| Create triples linking atoms | `operations/create-triples.md` | Yes — `msg.value = sum(assets[])`, each `assets[i] >= tripleCost` |
+| Create triples linking terms | `operations/create-triples.md` | Yes — `msg.value = sum(assets[])`, each `assets[i] >= tripleCost` |
 | Deposit $TRUST into a vault | `operations/deposit.md` | Yes — `msg.value = deposit amount` |
 | Redeem shares from a vault | `operations/redeem.md` | No — `value = 0` |
 | Deposit into multiple vaults | `operations/batch-deposit.md` | Yes — `msg.value = sum(assets)` |
