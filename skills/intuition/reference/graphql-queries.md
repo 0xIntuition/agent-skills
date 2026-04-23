@@ -540,30 +540,23 @@ query AtomTriples($atomId: String!, $limit: Int!) {
 }
 ```
 
-### Triple to Connected Atoms
+### Triple to Connected Terms
 
-Resolve all three component atoms with full metadata:
+Resolve all three component terms with nested-safe metadata. Use the `*_term`
+relationships instead of the legacy atom-only `subject` / `predicate` /
+`object` paths when a triple may contain another triple as a position:
 
 ```graphql
 query TripleDetails($tripleId: String!) {
   triple(term_id: $tripleId) {
     term_id
     counter_term_id
-    subject {
-      term_id
-      label
-      image
-      type
-      value { thing { description url } person { description url } }
-    }
-    predicate { term_id label }
-    object {
-      term_id
-      label
-      image
-      type
-      value { thing { description url } person { description url } }
-    }
+    subject_id
+    predicate_id
+    object_id
+    subject_term { ...TermLabel }
+    predicate_term { ...TermLabel }
+    object_term { ...TermLabel }
     term {
       vaults {
         curve_id
@@ -583,6 +576,23 @@ query TripleDetails($tripleId: String!) {
     }
   }
 }
+
+fragment TermLabel on terms {
+  id
+  type
+  atom {
+    term_id
+    label
+    image
+    type
+  }
+  triple {
+    term_id
+    subject { label }
+    predicate { label }
+    object { label }
+  }
+}
 ```
 
 ### Triple Consensus (Agreement vs Disagreement)
@@ -594,9 +604,9 @@ query TripleConsensus($tripleId: String!) {
   triple(term_id: $tripleId) {
     term_id
     counter_term_id
-    subject { term_id label }
-    predicate { term_id label }
-    object { term_id label }
+    subject_term { ...TermLabel }
+    predicate_term { ...TermLabel }
+    object_term { ...TermLabel }
     term {
       vaults {
         curve_id
@@ -613,6 +623,18 @@ query TripleConsensus($tripleId: String!) {
         position_count
       }
     }
+  }
+}
+
+fragment TermLabel on terms {
+  id
+  type
+  atom { term_id label }
+  triple {
+    term_id
+    subject { label }
+    predicate { label }
+    object { label }
   }
 }
 ```
@@ -636,9 +658,10 @@ query AccountPositions($address: String!, $limit: Int!) {
       term {
         atom { term_id label type }
         triple {
-          subject { label }
-          predicate { label }
-          object { label }
+          term_id
+          subject_term { ...TermLabel }
+          predicate_term { ...TermLabel }
+          object_term { ...TermLabel }
         }
       }
     }
@@ -650,6 +673,18 @@ query AccountPositions($address: String!, $limit: Int!) {
       count
       sum { shares }
     }
+  }
+}
+
+fragment TermLabel on terms {
+  id
+  type
+  atom { term_id label type }
+  triple {
+    term_id
+    subject { label }
+    predicate { label }
+    object { label }
   }
 }
 ```
