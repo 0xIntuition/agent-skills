@@ -4,9 +4,13 @@ set -euo pipefail
 # Edge-case verification aligned to Intuition skill docs.
 # Requires RPC access but does not require signing.
 
+export FOUNDRY_DISABLE_NIGHTLY_WARNING="${FOUNDRY_DISABLE_NIGHTLY_WARNING:-1}"
+
 RPC="${RPC:-https://rpc.intuition.systems/http}"
 MULTIVAULT="${MULTIVAULT:-0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e}"
-SENDER="${SENDER:-0x1111111111111111111111111111111111111111}"
+SENDER="${SENDER:-$MULTIVAULT}"
+MULTIVAULT_ATOM_EXISTS_SELECTOR="0xb4856ebc"
+MULTIVAULT_TERM_DOES_NOT_EXIST_SELECTOR="0x4762af7d"
 
 PASS_COUNT=0
 FAIL_COUNT=0
@@ -34,13 +38,17 @@ expect_contains() {
   fi
 }
 
+normalize_cast_uint() {
+  awk 'NF { print $1; exit }'
+}
+
 echo "== Pass 2: Edge Case Tests =="
 echo "RPC=$RPC"
 echo "MULTIVAULT=$MULTIVAULT"
 
-ATOM_COST=$(cast call "$MULTIVAULT" "getAtomCost()(uint256)" --rpc-url "$RPC")
-TRIPLE_COST=$(cast call "$MULTIVAULT" "getTripleCost()(uint256)" --rpc-url "$RPC")
-CURVE_ID=$(cast call "$MULTIVAULT" "getBondingCurveConfig()((address,uint256))" --rpc-url "$RPC" | awk -F', ' '{print $2}' | tr -d ')')
+ATOM_COST=$(cast call "$MULTIVAULT" "getAtomCost()(uint256)" --rpc-url "$RPC" | normalize_cast_uint)
+TRIPLE_COST=$(cast call "$MULTIVAULT" "getTripleCost()(uint256)" --rpc-url "$RPC" | normalize_cast_uint)
+CURVE_ID=$(cast call "$MULTIVAULT" "getBondingCurveConfig()((address,uint256))" --rpc-url "$RPC" | awk -F', ' '{print $2}' | tr -d ')' | normalize_cast_uint)
 pass "queried atom/triple cost and curve id"
 
 # Edge 1: Existing atom should already exist and simulated create should revert
@@ -62,7 +70,7 @@ if [[ "$CREATE_ATOM_CODE" -ne 0 ]]; then
 else
   fail "createAtoms(existing atom) unexpectedly succeeded"
 fi
-expect_contains "$CREATE_ATOM_REVERT" "MultiVault_AtomExists" "createAtoms(existing atom) revert"
+expect_contains "$CREATE_ATOM_REVERT" "$MULTIVAULT_ATOM_EXISTS_SELECTOR" "createAtoms(existing atom) MultiVault_AtomExists revert"
 
 # Edge 2: Missing triple component term should revert
 MISSING_SUBJECT="0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -79,11 +87,11 @@ CREATE_TRIPLE_REVERT=$(cast call "$MULTIVAULT" "createTriples(bytes32[],bytes32[
 CREATE_TRIPLE_CODE=$?
 set -e
 if [[ "$CREATE_TRIPLE_CODE" -ne 0 ]]; then
-  pass "createTriples(missing atoms) reverted as expected"
+  pass "createTriples(missing terms) reverted as expected"
 else
-  fail "createTriples(missing atoms) unexpectedly succeeded"
+  fail "createTriples(missing terms) unexpectedly succeeded"
 fi
-expect_contains "$CREATE_TRIPLE_REVERT" "MultiVault_TermDoesNotExist" "createTriples(missing atoms) revert"
+expect_contains "$CREATE_TRIPLE_REVERT" "$MULTIVAULT_TERM_DOES_NOT_EXIST_SELECTOR" "createTriples(missing terms) MultiVault_TermDoesNotExist revert"
 
 # Edge 3: Counter-triple computation flow consistency
 ALICE_ID=$(cast call "$MULTIVAULT" "calculateAtomId(bytes)(bytes32)" "$(cast --from-utf8 "Alice")" --rpc-url "$RPC")

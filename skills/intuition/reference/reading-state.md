@@ -22,6 +22,15 @@ cast call $MULTIVAULT "calculateAtomId(bytes)(bytes32)" $(cast --from-utf8 "Ethe
 # Check if a term exists
 cast call $MULTIVAULT "isTermCreated(bytes32)(bool)" 0x<termId> --rpc-url $RPC
 
+# Coarse triple-family check (true for positive triples and counter-triples)
+cast call $MULTIVAULT "isTriple(bytes32)(bool)" 0x<termId> --rpc-url $RPC
+
+# Counter-triple check
+cast call $MULTIVAULT "isCounterTriple(bytes32)(bool)" 0x<termId> --rpc-url $RPC
+
+# Precise term classifier: 0=ATOM, 1=TRIPLE, 2=COUNTER_TRIPLE
+cast call $MULTIVAULT "getVaultType(bytes32)(uint8)" 0x<termId> --rpc-url $RPC
+
 # Query default curve ID (do this once per session)
 CURVE_ID=$(cast call $MULTIVAULT "getBondingCurveConfig()((address,uint256))" --rpc-url $RPC | awk -F', ' '{print $2}' | tr -d ')')
 # On mainnet this returns 1; always query this value
@@ -46,6 +55,8 @@ cast call $MULTIVAULT "getTriple(bytes32)(bytes32,bytes32,bytes32)" 0x<tripleId>
 
 # Get counter-triple ID
 cast call $MULTIVAULT "getCounterIdFromTripleId(bytes32)(bytes32)" 0x<tripleId> --rpc-url $RPC
+# Use getVaultType() or isCounterTriple() to distinguish the returned counter side
+# from the positive triple. isTriple(counterId) is also true.
 
 # Get atom data (returns raw bytes)
 cast call $MULTIVAULT "getAtom(bytes32)(bytes)" 0x<atomId> --rpc-url $RPC
@@ -90,6 +101,30 @@ const exists = await client.readContract({
   abi: readAbi,
   functionName: 'isTermCreated',
   args: [atomId],
+})
+
+// Coarse triple-family check (true for positive triples and counter-triples)
+const isTriple = await client.readContract({
+  address: MULTIVAULT,
+  abi: readAbi,
+  functionName: 'isTriple',
+  args: [termId],
+})
+
+// Counter-triple check
+const isCounterTriple = await client.readContract({
+  address: MULTIVAULT,
+  abi: readAbi,
+  functionName: 'isCounterTriple',
+  args: [termId],
+})
+
+// Precise term classifier: 0=ATOM, 1=TRIPLE, 2=COUNTER_TRIPLE
+const vaultType = await client.readContract({
+  address: MULTIVAULT,
+  abi: readAbi,
+  functionName: 'getVaultType',
+  args: [termId],
 })
 
 // Get bonding curve config (do once per session)
@@ -162,5 +197,9 @@ const [registry, defaultCurveId] = await client.readContract({ address: MULTIVAU
 ```
 
 You now have `atomCost`, `tripleCost`, `defaultCurveId`, `$GRAPHQL`, `$CHAIN_ID`, and `$NETWORK`. Use these in all subsequent operations — including the Step 4 JSON output contract in each operation file and GraphQL queries in `reference/graphql-queries.md`.
+
+Use `getVaultType(termId)` whenever term provenance is unclear and the
+distinction matters. `isTriple(termId)` is only a coarse read and returns
+`true` for counter-triples too.
 
 For the semantics of the other config reads (`getGeneralConfig`, `getAtomConfig`, `getTripleConfig`, `getVaultFees`, `getBondingCurveConfig`) — which fields constrain tx generation versus which are informational — see `reference/config-fields.md`.

@@ -11,6 +11,7 @@ Scope:
 
 - `tests/prompts/b1-validation-prompts.md` -- offline validation-oriented agent consumption prompts
 - `tests/prompts/b1-graphql-prompts.md` -- GraphQL discovery prompts (search, traverse, compose, safety)
+- `tests/prompts/b1-nested-triple-prompts.md` -- nested-triple discovery, classification, construction preflight, rendering fixtures, and counter-triple safety prompts
 - `tests/prompts/b1-pin-prompts.md` -- IPFS pinning & structured atom prompts (Pin-1..4 positive, Pin-N1..N4 negative)
 - `tests/prompts/b2-onchain-prompts.md` -- unsigned-transaction templates plus explicit post-broadcast checks
 - `tests/prompts/b2-onchain-integration-prompts.md` -- full integration prompts (simulate, broadcast, verify)

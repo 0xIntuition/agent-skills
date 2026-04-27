@@ -217,15 +217,24 @@ query SearchTerm($query: String!, $limit: Int) {
     atom { term_id label image type creator { id label } }
     triple {
       term_id
-      subject { label }
-      predicate { label }
-      object { label }
+      subject_term { ...TermSearchResult }
+      predicate_term { ...TermSearchResult }
+      object_term { ...TermSearchResult }
     }
   }
 }
+
+fragment TermSearchResult on terms {
+  id
+  type
+  atom { term_id label image type }
+  triple { term_id subject_id predicate_id object_id }
+}
 ```
 
-- `type` is `"Atom"` or `"Triple"` — check before accessing `atom` or `triple`.
+- `type` may be `"Atom"`, `"Triple"`, or `"CounterTriple"` at the schema level.
+  Filter explicitly to `"Triple"` when you want a reusable positive statement
+  term for nested composition.
 - `id` on `terms` matches `term_id` on the nested `atom` or `triple`.
 
 Variables: `{ "query": "ethereum", "limit": 20 }`
@@ -258,6 +267,49 @@ query GetTriplesByPredicate($predicateLabel: String!, $limit: Int!) {
 }
 ```
 
+The `subject` / `predicate` / `object` paths above are legacy atom-only
+relationships. They return `NULL` when the component itself is a triple. For
+nested-aware consumers, switch to the term-aware relationships instead:
+
+```graphql
+query GetTriplesByPredicateNestedAware($predicateLabel: String!, $limit: Int!) {
+  triples(
+    where: { predicate: { label: { _eq: $predicateLabel } } }
+    limit: $limit
+    order_by: { created_at: desc }
+  ) {
+    term_id
+    counter_term_id
+    subject_term { ...TermElement }
+    predicate_term { ...TermElement }
+    object_term { ...TermElement }
+    term {
+      vaults {
+        curve_id
+        total_shares
+        current_share_price
+        position_count
+      }
+    }
+  }
+}
+
+fragment TermElement on terms {
+  id
+  type
+  atom {
+    term_id
+    label
+    image
+    type
+  }
+  triple { term_id subject_id predicate_id object_id }
+}
+```
+
+This is the same pattern Portal uses via `subject_term`, `predicate_term`, and
+`object_term` when it needs to render nested triples safely.
+
 ### Positions by Account
 
 Find all positions held by an address:
@@ -279,13 +331,21 @@ query GetPositions($accountId: String!, $limit: Int!) {
       term {
         atom { term_id label image }
         triple {
-          subject { label }
-          predicate { label }
-          object { label }
+          term_id
+          subject_term { ...TermPreview }
+          predicate_term { ...TermPreview }
+          object_term { ...TermPreview }
         }
       }
     }
   }
+}
+
+fragment TermPreview on terms {
+  id
+  type
+  atom { term_id label image type }
+  triple { term_id subject_id predicate_id object_id }
 }
 ```
 
@@ -312,9 +372,9 @@ query GlobalSearch($searchTerm: String!, $limit: Int!) {
     limit: $limit
   ) {
     term_id
-    subject { label }
-    predicate { label }
-    object { label }
+    subject_term { ...TermPreview }
+    predicate_term { ...TermPreview }
+    object_term { ...TermPreview }
   }
   accounts(
     where: {
@@ -330,7 +390,18 @@ query GlobalSearch($searchTerm: String!, $limit: Int!) {
     image
   }
 }
+
+fragment TermPreview on terms {
+  id
+  type
+  atom { term_id label image type }
+  triple { term_id subject_id predicate_id object_id }
+}
 ```
+
+The triple filter above searches atom labels in component positions. For
+triple-valued component positions, discover by `term_id` or use the
+nested-triple discovery pattern below, then render with `*_term`.
 
 ## Composing Filters
 
@@ -476,44 +547,44 @@ query AtomTriples($atomId: String!, $limit: Int!) {
     limit: $limit
   ) {
     term_id
-    predicate { label }
-    object { term_id label }
+    predicate_term { ...TermPreview }
+    object_term { ...TermPreview }
   }
   as_object: triples(
     where: { object: { term_id: { _eq: $atomId } } }
     limit: $limit
   ) {
     term_id
-    subject { term_id label }
-    predicate { label }
+    subject_term { ...TermPreview }
+    predicate_term { ...TermPreview }
   }
+}
+
+fragment TermPreview on terms {
+  id
+  type
+  atom { term_id label image type }
+  triple { term_id subject_id predicate_id object_id }
 }
 ```
 
-### Triple to Connected Atoms
+### Triple to Connected Terms
 
-Resolve all three component atoms with full metadata:
+Resolve all three component terms with nested-safe metadata. Use the `*_term`
+relationships instead of the legacy atom-only `subject` / `predicate` /
+`object` paths when a triple may contain another triple as a position:
 
 ```graphql
 query TripleDetails($tripleId: String!) {
   triple(term_id: $tripleId) {
     term_id
     counter_term_id
-    subject {
-      term_id
-      label
-      image
-      type
-      value { thing { description url } person { description url } }
-    }
-    predicate { term_id label }
-    object {
-      term_id
-      label
-      image
-      type
-      value { thing { description url } person { description url } }
-    }
+    subject_id
+    predicate_id
+    object_id
+    subject_term { ...TermLabel }
+    predicate_term { ...TermLabel }
+    object_term { ...TermLabel }
     term {
       vaults {
         curve_id
@@ -533,6 +604,18 @@ query TripleDetails($tripleId: String!) {
     }
   }
 }
+
+fragment TermLabel on terms {
+  id
+  type
+  atom {
+    term_id
+    label
+    image
+    type
+  }
+  triple { term_id subject_id predicate_id object_id }
+}
 ```
 
 ### Triple Consensus (Agreement vs Disagreement)
@@ -544,9 +627,9 @@ query TripleConsensus($tripleId: String!) {
   triple(term_id: $tripleId) {
     term_id
     counter_term_id
-    subject { term_id label }
-    predicate { term_id label }
-    object { term_id label }
+    subject_term { ...TermLabel }
+    predicate_term { ...TermLabel }
+    object_term { ...TermLabel }
     term {
       vaults {
         curve_id
@@ -564,6 +647,13 @@ query TripleConsensus($tripleId: String!) {
       }
     }
   }
+}
+
+fragment TermLabel on terms {
+  id
+  type
+  atom { term_id label }
+  triple { term_id subject_id predicate_id object_id }
 }
 ```
 
@@ -586,9 +676,10 @@ query AccountPositions($address: String!, $limit: Int!) {
       term {
         atom { term_id label type }
         triple {
-          subject { label }
-          predicate { label }
-          object { label }
+          term_id
+          subject_term { ...TermLabel }
+          predicate_term { ...TermLabel }
+          object_term { ...TermLabel }
         }
       }
     }
@@ -601,6 +692,13 @@ query AccountPositions($address: String!, $limit: Int!) {
       sum { shares }
     }
   }
+}
+
+fragment TermLabel on terms {
+  id
+  type
+  atom { term_id label type }
+  triple { term_id subject_id predicate_id object_id }
 }
 ```
 
@@ -623,8 +721,8 @@ query ClaimsForPredicate($predicateId: String!, $limit: Int!) {
     limit: $limit
     order_by: { created_at: desc }
   ) {
-    subject { term_id label }
-    object { term_id label }
+    subject_term { ...TermPreview }
+    object_term { ...TermPreview }
     term {
       vaults {
         curve_id
@@ -634,7 +732,76 @@ query ClaimsForPredicate($predicateId: String!, $limit: Int!) {
     }
   }
 }
+
+fragment TermPreview on terms {
+  id
+  type
+  atom { term_id label image type }
+  triple { term_id subject_id predicate_id object_id }
+}
 ```
+
+## Nested-Triple Discovery
+
+When the goal is to reuse an existing positive statement term in a new triple,
+query `terms` directly and filter to `type: { _eq: Triple }`. This avoids the
+broader schema surface where `CounterTriple` can also appear in term searches.
+
+```graphql
+query DiscoverNestedTriple($searchTerm: String!, $limit: Int!) {
+  terms(
+    where: {
+      _and: [
+        { type: { _eq: Triple } }
+        {
+          _or: [
+            { triple: { subject: { label: { _ilike: $searchTerm } } } }
+            { triple: { predicate: { label: { _ilike: $searchTerm } } } }
+            { triple: { object: { label: { _ilike: $searchTerm } } } }
+          ]
+        }
+      ]
+    }
+    order_by: { total_market_cap: desc }
+    limit: $limit
+  ) {
+    id
+    type
+    total_market_cap
+    triple {
+      term_id
+      subject_term { ...TermPreview }
+      predicate_term { ...TermPreview }
+      object_term { ...TermPreview }
+    }
+  }
+}
+
+fragment TermPreview on terms {
+  id
+  type
+  atom { term_id label image type }
+  triple { term_id subject_id predicate_id object_id }
+}
+```
+
+Variables: `{ "searchTerm": "%trust%", "limit": 10 }`
+
+The filter above searches atom labels inside triple component positions. For
+deeper nested composition, query by known component `term_id`s or expand the
+returned triple terms with `TripleDetails`.
+
+Operationally:
+
+1. Discover candidate triple terms with the query above.
+2. Confirm the chosen result has `type = Triple`.
+3. Revalidate the chosen `term_id` on-chain with `isTermCreated`.
+4. Feed that `term_id` directly into `createTriples` as a subject, predicate,
+   or object position.
+
+If you need nested-safe rendering for the selected result, use the `*_term`
+pattern shown above instead of atom-only `subject` / `predicate` / `object`
+paths.
 
 ## Graph Analysis Queries
 

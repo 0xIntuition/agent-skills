@@ -136,7 +136,9 @@ Minimum intent object:
 4. Decode the calldata and verify selector + arguments exactly match the intended operation and computed args.
 5. Validate term binding:
    - stake/redeem operations: term exists on-chain (`isTermCreated(termId)`).
-   - triple creation: subject/predicate/object atoms exist on-chain.
+   - triple creation: subject/predicate/object terms exist on-chain.
+   - if intent requires a positive triple position, classify it with
+     `getVaultType(termId) == 1`; do not rely on `isTriple` alone.
 6. Resolve receiver for receiver-bearing operations:
    - if receiver is omitted, set it to signer address.
    - receiver value is a non-zero address.

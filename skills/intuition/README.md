@@ -82,8 +82,12 @@ jq -n --arg to "$MULTIVAULT" --arg data "$CALLDATA" --arg value "$ATOM_COST" --a
 
 - `SKILL.md`: canonical machine-facing contract, invariants, and output shape.
 - `operations/`: write-specific encoding flows for create, deposit, redeem, batch, and approvals.
-- `reference/`: read queries, network config, GraphQL, pinning, config semantics, and verification.
+- `reference/`: read queries, network config, GraphQL, pinning, config semantics, verification, and nested-triple composition guidance.
 - `README.md`: operator-facing onboarding and first-success flows.
+
+The skill also supports creating nested triples: triples whose subject,
+predicate, or object reuses another triple's `term_id`. See
+`reference/nested-triples.md`.
 
 ## Autonomous Mode
 

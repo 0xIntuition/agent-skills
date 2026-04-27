@@ -44,10 +44,15 @@ If the simulation reverts, it will show the revert reason:
 
 - `MultiVault_InsufficientBalance` -- `msg.value` does not equal `sum(assets[])`
 - `MultiVault_InsufficientAssets` -- `assets[i]` less than creation cost
-- `MultiVault_TermDoesNotExist` -- referenced atom hasn't been created yet
+- `MultiVault_TermDoesNotExist` -- referenced term hasn't been created yet
 - `MultiVault_AtomExists` -- atom with that data already created; use existing ID
 - `MultiVault_TripleExists` -- triple with those components already created; use existing ID
 - `MultiVault_ArraysNotSameLength` -- parallel arrays have different lengths
+
+Simulation proves the calldata succeeds against current state. It is not a
+substitute for type-intent checks: if the caller intends to reuse a positive
+triple specifically, classify the term first with `getVaultType` rather than
+relying on simulation alone.
 
 ## Verifying Calldata
 

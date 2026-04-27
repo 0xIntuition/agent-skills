@@ -25,12 +25,14 @@ Expected:
 Goal:
 - Probe state-dependent edge cases without broadcasting transactions.
 
-Artifact:
+Artifacts:
 - `scripts/pass2-edge-case-tests.sh`
+- `scripts/nested-triple-smoke.sh` (verifies three-valued GraphQL discriminator, `getVaultType` ordinals, `isTriple` coarseness, polymorphic `*_term` fragments, optional nested fixtures, and unknown-id guard behavior — `isTermCreated` distinguishes missing vs created terms, while `getVaultType` reverts on unknown ids with `MultiVaultCore_TermDoesNotExist`. Defaults to testnet, supports `CHAIN=mainnet`, `NESTED_TRIPLE_ID=0x...`, `STRICT_NESTED_FIXTURE=1`, and `FAKE_TERM=0x...`)
 
 Run:
 ```bash
 ./scripts/pass2-edge-case-tests.sh
+./scripts/nested-triple-smoke.sh
 ```
 
 ### Layer B1: Autonomous Consumption (No Broadcast)
@@ -41,6 +43,7 @@ Goal:
 Artifacts:
 - `tests/prompts/b1-validation-prompts.md`
 - `tests/prompts/b1-graphql-prompts.md`
+- `tests/prompts/b1-nested-triple-prompts.md`
 
 ### Layer B2: On-Chain Integration (Broadcast)
 

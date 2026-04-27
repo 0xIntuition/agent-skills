@@ -50,6 +50,25 @@ Follow these multi-step recipes for common Intuition operations. Each assumes yo
    -> returns [tripleId]
 ```
 
+This is the common case: three atom-backed positions. Nested composition uses
+the same `createTriples` call shape, but one or more positions may already be an
+existing triple `term_id`. In that case, reuse the known `term_id` directly
+instead of pinning new atom bytes for that position.
+
+### Nested Composition Note
+
+```
+1. Start from an existing positive triple term_id (T1)
+2. Classify it when provenance is unclear:
+   getVaultType(T1) -> expect TRIPLE
+3. Resolve the other positions as usual
+4. createTriples([T1], [predicateId], [objectId], [tripleCost])  value=tripleCost
+   -> returns [nestedTripleId]
+```
+
+See `reference/nested-triples.md` for a concrete statement-about-statement
+example and the GraphQL patterns for discovering reusable triple terms.
+
 ## 3. Signal Agreement (Deposit into Triple)
 
 ```

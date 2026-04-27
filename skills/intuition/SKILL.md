@@ -120,6 +120,7 @@ Read these files when performing the corresponding operation:
 reference/                        (Path A: read-only — load these directly)
   network-config.md               Canonical network metadata, session env values, and viem chain defs
   graphql-queries.md              GraphQL discovery — search, traverse, aggregate, graph landscape
+  nested-triples.md                Nested triple composition and term-aware rendering
   reading-state.md                On-chain reads and session setup (Path B prerequisite)
   config-fields.md                Protocol config semantics — which fields constrain txs, which are informational
   schemas.md                      Schema types, IPFS pinning, and structured atom creation
@@ -130,7 +131,7 @@ reference/                        (Path A: read-only — load these directly)
 
 operations/                       (Path B: writes — run session setup first)
   create-atoms.md                 Create atom vaults from URI data
-  create-triples.md               Create triple vaults linking three atoms
+  create-triples.md               Create triple vaults linking three terms
   deposit.md                      Deposit $TRUST into a vault, mint shares
   redeem.md                       Redeem shares from a vault, receive $TRUST
   batch-deposit.md                Deposit into multiple vaults in one transaction
@@ -141,7 +142,7 @@ operations/                       (Path B: writes — run session setup first)
 ## Protocol Model
 
 - **Atoms** represent any concept — a person, URL, address, label. Created by encoding a URI as bytes. Each has a deterministic `bytes32` ID and a vault. For rich metadata (name, description, image, URL), pin structured data to IPFS first and encode the `ipfs://` URI — see `reference/schemas.md`.
-- **Triples** are claims linking three atoms: `(subject, predicate, object)` — e.g., `(Alice, trusts, Bob)`. Each has a vault and an automatic counter-triple vault.
+- **Triples** are claims linking three terms: `(subject, predicate, object)`. The common case links three atoms, e.g. `(Alice, trusts, Bob)`, but any position may reuse an existing triple `term_id` for nested composition. Each triple has a vault and an automatic counter-triple vault.
 - **Vaults** back every atom and triple. Depositing $TRUST mints shares on a bonding curve. Depositing into a triple signals agreement; depositing into its counter-triple signals disagreement.
 
 Native token: **$TRUST** (mainnet) / **tTRUST** (testnet), 18 decimals. All `msg.value` and gas are denominated in TRUST. Gas fees are negligible (~0.0001 TRUST per tx).
@@ -239,6 +240,12 @@ const readAbi = parseAbi([
 ])
 ```
 
+For nested composition, `getVaultType(termId)` is the precise classifier:
+`0 = ATOM`, `1 = TRIPLE`, `2 = COUNTER_TRIPLE`. `isTriple(termId)` is a
+coarser check and returns `true` for counter-triples too. `calculateTripleId`
+is deterministic, so callers can precompute future triple `term_id`s before
+broadcasting.
+
 ### Write Functions
 
 ```typescript
@@ -293,9 +300,18 @@ Pin everything — including predicates (`"implements"`, `"trusts"`) and concept
 
 The atom's `bytes32` ID is deterministically computed from its data via `calculateAtomId(bytes)`. Creating an atom that already exists reverts with `MultiVault_AtomExists`. Always check `isTermCreated(calculateAtomId(data))` before calling `createAtoms`.
 
-### Triples: Three Atom IDs
+### Triples: Three Term IDs
 
-A triple links three existing atoms: `(subject, predicate, object)`. All three must be created first. Every triple automatically gets a **counter-triple** vault for signaling disagreement.
+A triple links three existing terms: `(subject, predicate, object)`. The
+common case is three atoms, but an existing triple `term_id` may also be reused
+as a position for nested composition. All three terms must already exist. Every
+triple automatically gets a **counter-triple** vault for signaling
+disagreement.
+
+A triple's `term_id` is itself a valid term and may be used as subject,
+predicate, or object in subsequent triples (reification). Use
+`getVaultType(termId)` when you need to distinguish positive triples from
+counter-triples. See `reference/nested-triples.md`.
 
 **Finding predicate atoms**: Do not hardcode predicate atom IDs. Canonical predicates are IPFS-pinned atoms — their IDs depend on the pinned URI, not a plain string. Query the graph to find existing predicates by label:
 
@@ -344,7 +360,7 @@ To perform a write, open the corresponding operation file and follow its steps e
 | When you need to... | Read this file | Payable |
 |---------------------|----------------|---------|
 | Create atoms from URIs | `operations/create-atoms.md` (always pin to IPFS first via `reference/schemas.md`, except CAIP-10) | Yes — `msg.value = sum(assets[])`, each `assets[i] >= atomCost` |
-| Create triples linking atoms | `operations/create-triples.md` | Yes — `msg.value = sum(assets[])`, each `assets[i] >= tripleCost` |
+| Create triples linking terms | `operations/create-triples.md` | Yes — `msg.value = sum(assets[])`, each `assets[i] >= tripleCost` |
 | Deposit $TRUST into a vault | `operations/deposit.md` | Yes — `msg.value = deposit amount` |
 | Redeem shares from a vault | `operations/redeem.md` | No — `value = 0` |
 | Deposit into multiple vaults | `operations/batch-deposit.md` | Yes — `msg.value = sum(assets)` |
@@ -394,7 +410,7 @@ These facts govern all Intuition transactions. Reference them when encoding oper
 | `MultiVault_InsufficientAssets` | `assets[i]` less than creation cost | Each `assets[i]` must be >= `getAtomCost()` or `getTripleCost()` |
 | `MultiVault_AtomExists` | Atom with same data already created | Check `isTermCreated(calculateAtomId(data))` first; use existing ID |
 | `MultiVault_TripleExists` | Triple with same components already created | Check `isTermCreated(calculateTripleId(...))` first; use existing ID |
-| `MultiVault_TermDoesNotExist` | Referenced atom in triple not created | Create the atom first via `createAtoms` |
+| `MultiVault_TermDoesNotExist` / `MultiVaultCore_TermDoesNotExist` | Referenced term does not exist, or a classifier read was run against an unknown ID | Create the missing atom via `createAtoms`, choose an existing triple `term_id`, or re-check the GraphQL-to-on-chain binding before composing |
 | `MultiVault_ArraysNotSameLength` | Parallel arrays have different lengths | Ensure all arrays match in length |
 | `MultiVault_InvalidArrayLength` | Empty array or exceeds max batch size | Provide at least one item; check max batch size |
 | Transaction reverts with no message | ABI encoding mismatch or unrecognized function sig | Verify bytes32 IDs, check curveId parameter |
