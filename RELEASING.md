@@ -102,6 +102,58 @@ If additional first-party skills are added later, use the same pattern:
 
 - `<skill-name>-vX.Y.Z`
 
+## Commands: Tag and Publish
+
+Steps 7 and 8 of the release PR checklist are intentionally manual. Releases
+are infrequent, the release-note style is tighter than `CHANGELOG.md`, and
+publishing is the right moment for a human gut-check on tone. We have not
+adopted an auto-publish workflow because a tag-triggered job would either
+drift from the curated style or fire on accidental local tags.
+
+After the release PR is squash-merged to `main`, run:
+
+```bash
+# 1. Sync local main with the merge commit
+git checkout main && git pull origin main
+
+# 2. Tag the merge commit and push the tag
+#    Use the merge SHA from `git log` (HEAD if you just pulled).
+git tag <skill>-v<X.Y.Z> <merge-sha>
+git push origin <skill>-v<X.Y.Z>
+
+# 3. Publish the GitHub Release pointing at that tag
+gh release create <skill>-v<X.Y.Z> -R 0xIntuition/agent-skills \
+  --target main \
+  --title "<skill> v<X.Y.Z>" \
+  --notes "$(cat <<'EOF'
+<one-or-two-sentence opener about why this release matters>
+
+\`\`\`bash
+npx skills add 0xIntuition/agent-skills#<skill>-v<X.Y.Z> --skill <skill>
+\`\`\`
+
+### Added
+- ...
+
+### Changed
+- ...
+
+### Fixed
+- ...
+EOF
+)"
+```
+
+Release-note style is a terser sibling of the `CHANGELOG.md` entry:
+
+- Lead with one or two sentences on operator-visible impact.
+- Include the `npx skills add` install snippet pinned to the new tag.
+- Keep the bulleted sections short and copy-tightened — strip prose
+  connectives and footnotes that belong in the PR body or `CHANGELOG.md`,
+  not the release.
+- Skip empty sections (e.g., omit `### Removed` when the release does not
+  remove anything).
+
 ## Release Notes Format
 
 Every GitHub Release should include:
