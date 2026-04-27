@@ -410,7 +410,7 @@ These facts govern all Intuition transactions. Reference them when encoding oper
 | `MultiVault_InsufficientAssets` | `assets[i]` less than creation cost | Each `assets[i]` must be >= `getAtomCost()` or `getTripleCost()` |
 | `MultiVault_AtomExists` | Atom with same data already created | Check `isTermCreated(calculateAtomId(data))` first; use existing ID |
 | `MultiVault_TripleExists` | Triple with same components already created | Check `isTermCreated(calculateTripleId(...))` first; use existing ID |
-| `MultiVault_TermDoesNotExist` | Referenced atom in triple not created | Create the atom first via `createAtoms` |
+| `MultiVault_TermDoesNotExist` / `MultiVaultCore_TermDoesNotExist` | Referenced term does not exist, or a classifier read was run against an unknown ID | Create the missing atom via `createAtoms`, choose an existing triple `term_id`, or re-check the GraphQL-to-on-chain binding before composing |
 | `MultiVault_ArraysNotSameLength` | Parallel arrays have different lengths | Ensure all arrays match in length |
 | `MultiVault_InvalidArrayLength` | Empty array or exceeds max batch size | Provide at least one item; check max batch size |
 | Transaction reverts with no message | ABI encoding mismatch or unrecognized function sig | Verify bytes32 IDs, check curveId parameter |
